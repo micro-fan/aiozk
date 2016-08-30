@@ -42,7 +42,6 @@ class ResponseErrorMeta(type):
             cls, name, bases, attrs
         )
 
-        print("adding code %s to xref" % (new_class.error_code))
         response_error_xref[new_class.error_code] = new_class
 
         return new_class

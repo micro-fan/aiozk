@@ -38,7 +38,6 @@ class Request(Part):
         formats.append(payload_format)
         data.extend(payload_data)
 
-        print('DATA: {} {}'.format(data, "!" + "".join(formats)))
         buff.write(struct.pack("!" + "".join(formats), *data))
 
         return buff.getvalue()

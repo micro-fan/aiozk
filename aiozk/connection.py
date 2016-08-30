@@ -128,7 +128,7 @@ class Connection(object):
             self.writer.write(payload)
             # handle_write(f)
         except Exception as e:
-            print('Exception e: {}'.format(e))
+            log.exception('Exception during write')
             self.abort()
 
         return f
@@ -171,7 +171,6 @@ class Connection(object):
 
     async def read_response(self, initial_connect=False):
         raw_size = await self.reader.read(size_struct.size)
-        print('RAW SIZE: {} {}'.format(raw_size, size_struct.size))
         size = size_struct.unpack(raw_size)[0]
 
         # connect and close op replies don't contain a reply header
