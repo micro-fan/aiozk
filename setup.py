@@ -9,7 +9,7 @@ setup(
     description="Asyncio client for Zookeeper.",
     author="Kirill Pinchuk",
     author_email="cybergrind@gmail.com",
-    url="http://github.com/wglass/zoonado",
+    url="http://github.com/tipsi/aiozk",
     license="MIT",
     keywords=["zookeeper", "asyncio", "async"],
     packages=find_packages(exclude=["tests", "tests.*"]),
