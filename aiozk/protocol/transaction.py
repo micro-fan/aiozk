@@ -1,7 +1,6 @@
 import logging
 import struct
-
-from six import BytesIO
+from io import BytesIO
 
 from aiozk import exc
 

@@ -1,6 +1,5 @@
 import logging
 
-import six
 from tornado import gen, ioloop
 
 from .children_watcher import ChildrenWatcher
@@ -122,7 +121,7 @@ class ZNodeCache(object):
         if self.children:
             return {
                 child_path: child_znode.as_dict()
-                for child_path, child_znode in six.iteritems(self.children)
+                for child_path, child_znode in self.children.items()
             }
 
         return self.data
