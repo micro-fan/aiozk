@@ -1,10 +1,9 @@
+import asyncio
 import contextlib
 import logging
 import time
 
-from tornado import gen, ioloop
-
-from zoonado import exc, states
+from aiozk import exc, states
 
 from .sequential import SequentialRecipe
 
@@ -14,19 +13,18 @@ log = logging.getLogger(__name__)
 
 class BaseLock(SequentialRecipe):
 
-    @gen.coroutine
-    def wait_in_line(self, znode_label, timeout=None, blocked_by=None):
+    async def wait_in_line(self, znode_label, timeout=None, blocked_by=None):
         time_limit = None
         if timeout is not None:
             time_limit = time.time() + timeout
 
-        yield self.create_unique_znode(znode_label)
+        await self.create_unique_znode(znode_label)
 
         while True:
             if time_limit and time.time() >= time_limit:
                 raise exc.TimeoutError
 
-            owned_positions, contenders = yield self.analyze_siblings()
+            owned_positions, contenders = await self.analyze_siblings()
             if znode_label not in owned_positions:
                 raise exc.SessionLost
 
@@ -40,9 +38,9 @@ class BaseLock(SequentialRecipe):
             if not blockers:
                 break
 
-            yield self.wait_on_sibling(blockers[-1], time_limit)
+            await self.wait_on_sibling(blockers[-1], time_limit)
 
-        raise gen.Return(self.make_contextmanager(znode_label))
+        return self.make_contextmanager(znode_label)
 
     def make_contextmanager(self, znode_label):
         state = {"acquired": True}
@@ -50,9 +48,8 @@ class BaseLock(SequentialRecipe):
         def still_acquired():
             return state["acquired"]
 
-        @gen.coroutine
-        def handle_session_loss():
-            yield self.client.session.state.wait_for(states.States.LOST)
+        async def handle_session_loss():
+            await self.client.session.state.wait_for(states.States.LOST)
             if not state["acquired"]:
                 return
 
@@ -62,19 +59,18 @@ class BaseLock(SequentialRecipe):
             )
             state["acquired"] = False
 
-        ioloop.IOLoop.current().add_callback(handle_session_loss)
+        asyncio.ensure_future(handle_session_loss())
 
-        @gen.coroutine
-        def on_exit():
+        async def on_exit():
             state["acquired"] = False
-            yield self.delete_unique_znode(znode_label)
+            await self.delete_unique_znode(znode_label)
 
         @contextlib.contextmanager
         def context_manager():
             try:
                 yield still_acquired
             finally:
-                ioloop.IOLoop.current().add_callback(on_exit)
+                asyncio.ensure_future(on_exit())
 
         return context_manager()
 

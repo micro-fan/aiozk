@@ -1,4 +1,4 @@
-from tornado import gen, concurrent
+import asyncio
 
 from .children_watcher import ChildrenWatcher
 from .sequential import SequentialRecipe
@@ -17,23 +17,20 @@ class Party(SequentialRecipe):
         self.members = []
         self.change_future = None
 
-    @gen.coroutine
-    def join(self):
-        yield self.create_unique_znode(self.name)
-        yield self.analyze_siblings()
+    async def join(self):
+        await self.create_unique_znode(self.name)
+        await self.analyze_siblings()
         self.watcher.add_callback(self.base_path, self.update_members)
 
-    @gen.coroutine
-    def wait_for_change(self):
+    async def wait_for_change(self):
         if not self.change_future or self.change_future.done():
-            self.change_future = concurrent.Future()
+            self.change_future = asyncio.Future()
 
-        yield self.change_future
+        await self.change_future
 
-    @gen.coroutine
-    def leave(self):
+    async def leave(self):
         self.watcher.remove_callback(self.base_path, self.update_members)
-        yield self.delete_unique_znode(self.name)
+        await self.delete_unique_znode(self.name)
 
     def update_members(self, raw_sibling_names):
         new_members = [

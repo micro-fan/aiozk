@@ -1,8 +1,8 @@
+import asyncio
 import logging
 import time
 
-from tornado import gen, ioloop
-from zoonado import exc
+from aiozk import exc
 
 from .sequential import SequentialRecipe
 
@@ -16,24 +16,21 @@ class Lease(SequentialRecipe):
         super(Lease, self).__init__(base_path)
         self.limit = limit
 
-    @gen.coroutine
-    def obtain(self, duration):
-        lessees = yield self.client.get_children(self.base_path)
+    async def obtain(self, duration):
+        lessees = await self.client.get_children(self.base_path)
 
         if len(lessees) >= self.limit:
-            raise gen.Return(False)
+            return False
 
         time_limit = time.time() + duration.total_seconds()
 
         try:
-            yield self.create_unique_znode("lease", data=str(time_limit))
+            await self.create_unique_znode("lease", data=str(time_limit))
         except exc.NodeExists:
             log.warn("Lease for %s already obtained.", self.base_path)
 
-        ioloop.IOLoop.current().call_at(time_limit, self.release)
+        asyncio.call_later(time_limit, asyncio.ensure_future, self.release())
+        return True
 
-        raise gen.Return(True)
-
-    @gen.coroutine
-    def release(self):
-        yield self.delete_unique_znode("lease")
+    async def release(self):
+        await self.delete_unique_znode("lease")

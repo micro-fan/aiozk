@@ -1,8 +1,8 @@
+import asyncio
 import collections
 import itertools
 import json
 
-from tornado import gen, ioloop
 
 from .data_watcher import DataWatcher
 from .party import Party
@@ -61,35 +61,30 @@ class Allocator(Recipe):
             )
         )
 
-    @gen.coroutine
-    def start(self):
+    async def start(self):
         self.active = True
 
-        yield self.ensure_path()
+        await self.ensure_path()
 
-        yield self.party.join()
+        await self.party.join()
 
         self.data_watcher.add_callback(self.base_path, self.handle_data_change)
+        asyncio.ensure_future(self.monitor_member_changes())
 
-        ioloop.IOLoop.current().add_callback(self.monitor_member_changes)
-
-    @gen.coroutine
-    def add(self, new_item):
+    async def add(self, new_item):
         new_set = self.full_set.copy().add(new_item)
-        yield self.update_set(new_set)
+        await self.update_set(new_set)
 
-    @gen.coroutine
-    def remove(self, new_item):
+    async def remove(self, new_item):
         new_set = self.full_set.copy().remove(new_item)
-        yield self.update_set(new_set)
+        await self.update_set(new_set)
 
-    @gen.coroutine
-    def update(self, new_items):
+    async def update(self, new_items):
         new_items = set(new_items)
         data = json.dumps(list(new_items))
 
-        with (yield self.lock.acquire()):
-            yield self.client.set_data(self.base_path, data=data)
+        with (await self.lock.acquire()):
+            await self.client.set_data(self.base_path, data=data)
 
     def monitor_member_changes(self):
         while self.active:
@@ -115,9 +110,8 @@ class Allocator(Recipe):
         self.validate(new_allocation)
         self.full_allocation = new_allocation
 
-    @gen.coroutine
-    def stop(self):
-        yield self.party.leave()
+    async def stop(self):
+        await self.party.leave()
 
         self.data_watcher.remove_callback(
             self.base_path, self.handle_data_change

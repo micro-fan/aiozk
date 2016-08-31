@@ -1,9 +1,8 @@
+import asyncio
 import collections
 import logging
 
-from tornado import ioloop, gen
-
-from zoonado import exc
+from aiozk import exc
 
 from .recipe import Recipe
 
@@ -23,27 +22,25 @@ class BaseWatcher(Recipe):
         self.callbacks[path].add(callback)
 
         if len(self.callbacks[path]) == 1:
-            ioloop.IOLoop.current().add_callback(self.watch_loop, path)
+            asyncio.ensure_future(self.watch_loop(path))
 
     def remove_callback(self, path, callback):
         self.callbacks[path].discard(callback)
 
-    @gen.coroutine
-    def fetch(self, path):
+    async def fetch(self, path):
         raise NotImplementedError
 
-    @gen.coroutine
-    def watch_loop(self, path):
+    async def watch_loop(self, path):
         while self.callbacks[path]:
             wait = self.client.wait_for_event(self.watched_event, path)
 
             log.debug("Fetching data for %s", path)
             try:
-                result = yield self.fetch(path)
+                result = await self.fetch(path)
             except exc.NoNode:
                 return
 
-            yield wait
+            await wait
 
             for callback in self.callbacks[path]:
-                ioloop.IOLoop.current().add_callback(callback, result)
+                asyncio.ensure_future(callback(result))

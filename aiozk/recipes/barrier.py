@@ -1,8 +1,7 @@
+import asyncio
 import time
 
-from tornado import gen
-
-from zoonado import exc, WatchEvent
+from aiozk import exc, WatchEvent
 
 from .recipe import Recipe
 
@@ -13,19 +12,16 @@ class Barrier(Recipe):
         super(Barrier, self).__init__()
         self.path = path
 
-    @gen.coroutine
-    def create(self):
-        yield self.ensure_path()
+    async def create(self):
+        await self.ensure_path()
 
-    @gen.coroutine
-    def lift(self):
+    async def lift(self):
         try:
-            self.client.delete(self.path)
+            await self.client.delete(self.path)
         except exc.NoNode:
             pass
 
-    @gen.coroutine
-    def wait(self, timeout=None):
+    async def wait(self, timeout=None):
         time_limit = None
         if timeout is not None:
             time_limit = time.time() + timeout
@@ -34,14 +30,14 @@ class Barrier(Recipe):
             WatchEvent.DELETED, self.path
         )
 
-        if time_limit:
-            barrier_lifted = gen.with_timeout(barrier_lifted, time_limit)
-
-        exists = yield self.client.exists(path=self.path, watch=True)
+        exists = await self.client.exists(path=self.path, watch=True)
         if not exists:
             return
 
         try:
-            yield barrier_lifted
-        except gen.TimeoutError:
+            if time_limit:
+                await asyncio.wait_for(barrier_lifted, time_limit)
+            else:
+                await barrier_lifted
+        except asyncio.TimeoutError:
             raise exc.TimeoutError

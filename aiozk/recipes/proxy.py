@@ -4,7 +4,7 @@ import pkg_resources
 from .recipe import Recipe
 
 
-ENTRY_POINT = "zoonado.recipes"
+ENTRY_POINT = "aiozk.recipes"
 
 log = logging.getLogger(__name__)
 

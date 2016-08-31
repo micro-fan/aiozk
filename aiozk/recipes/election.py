@@ -1,6 +1,5 @@
+import asyncio
 import time
-
-from tornado import gen, ioloop, concurrent
 
 from .sequential import SequentialRecipe
 
@@ -11,16 +10,14 @@ class LeaderElection(SequentialRecipe):
         super(LeaderElection, self).__init__(base_path)
         self.has_leadership = False
 
-        self.leadership_future = concurrent.Future()
+        self.leadership_future = asyncio.Future()
 
-    @gen.coroutine
-    def join(self):
-        yield self.create_unique_znode("candidate")
-        yield self.check_position()
+    async def join(self):
+        await self.create_unique_znode("candidate")
+        await self.check_position()
 
-    @gen.coroutine
-    def check_position(self, _=None):
-        owned_positions, candidates = yield self.analyze_siblings()
+    async def check_position(self, _=None):
+        owned_positions, candidates = await self.analyze_siblings()
         if "candidate" not in owned_positions:
             return
 
@@ -32,12 +29,10 @@ class LeaderElection(SequentialRecipe):
             self.leadership_future.set_result(None)
             return
 
-        moved_up = self.wait_on_sibling(candidates[position - 1])
+        await self.wait_on_sibling(candidates[position - 1])
+        asyncio.ensure_future(self.check_position())
 
-        ioloop.IOLoop.current().add_future(moved_up, self.check_position)
-
-    @gen.coroutine
-    def wait_for_leadership(self, timeout=None):
+    async def wait_for_leadership(self, timeout=None):
         if self.has_leadership:
             return
 
@@ -46,10 +41,9 @@ class LeaderElection(SequentialRecipe):
             time_limit = time.time() + timeout
 
         if time_limit:
-            yield gen.with_timeout(self.leadership_future, time_limit)
+            await asyncio.wait_for(self.leadership_future, time_limit)
         else:
-            yield self.leadership_future
+            await self.leadership_future
 
-    @gen.coroutine
-    def resign(self):
-        yield self.delete_unique_znode("candidate")
+    async def resign(self):
+        await self.delete_unique_znode("candidate")

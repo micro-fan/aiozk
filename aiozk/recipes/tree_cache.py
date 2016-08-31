@@ -1,6 +1,5 @@
+import asyncio
 import logging
-
-from tornado import gen, ioloop
 
 from .children_watcher import ChildrenWatcher
 from .data_watcher import DataWatcher
@@ -22,8 +21,7 @@ class TreeCache(Recipe):
         self.defaults = defaults or {}
         self.root = None
 
-    @gen.coroutine
-    def start(self):
+    async def start(self):
         log.debug("Starting znode tree cache at %s", self.base_path)
 
         self.root = ZNodeCache(
@@ -31,9 +29,9 @@ class TreeCache(Recipe):
             self.client, self.data_watcher, self.children_watcher,
         )
 
-        yield self.ensure_path()
+        await self.ensure_path()
 
-        yield self.root.start()
+        await self.root.start()
 
     def stop(self):
         self.root.stop()
@@ -73,8 +71,7 @@ class ZNodeCache(object):
 
         return self.children[name]
 
-    @gen.coroutine
-    def start(self):
+    async def start(self):
         data, children = yield [
             self.client.get_data(self.path),
             self.client.get_children(self.path)
@@ -87,7 +84,7 @@ class ZNodeCache(object):
                 self.client, self.data_watcher, self.child_watcher
             )
 
-        yield [child.start() for child in self.children.values()]
+        await [child.start() for child in self.children.values()]
 
         self.data_watcher.add_callback(self.path, self.data_callback)
         self.child_watcher.add_callback(self.path, self.child_callback)
@@ -111,7 +108,7 @@ class ZNodeCache(object):
                 self.path + "/" + added, self.defaults.get(added, {}),
                 self.client, self.data_watcher, self.child_watcher
             )
-            ioloop.IOLoop.current.add_callback(self.children[added].start)
+            asyncio.ensure_future(self.children[added].start())
 
     def data_callback(self, data):
         log.debug("New value for %s: %r", self.dot_path, data)
