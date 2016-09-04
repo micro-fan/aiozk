@@ -1,18 +1,22 @@
+import os
 from aiozk import ZKClient
 from .aio_test import AIOTestCase
+
+
+HOST = os.environ.get('ZK_HOST', 'zk')
 
 
 class ZKBase(AIOTestCase):
 
     async def client(self):
-        c = ZKClient('localhost', chroot='/test_aiozk')
+        c = ZKClient(HOST, chroot='/test_aiozk')
         await c.start()
         self.clients.append(c)
         return c
 
     async def setUp(self):
         self.clients = []
-        self.c = ZKClient('localhost', chroot='/test_aiozk')
+        self.c = ZKClient(HOST, chroot='/test_aiozk')
         await self.c.start()
 
     async def tearDown(self):

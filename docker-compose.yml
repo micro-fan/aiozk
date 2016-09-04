@@ -1,0 +1,11 @@
+version: '2'
+
+services:
+  zk:
+    image: jplock/zookeeper:3.5.2-alpha
+
+  aiozk:
+    build: .
+    command: nose2
+    depends_on:
+      - zk

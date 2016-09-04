@@ -1,0 +1,11 @@
+*.pyc
+*.egg-info
+.coverage
+.tox
+.docbuild
+*.egg
+build
+dist
+__pycache__
+*~
+*\#

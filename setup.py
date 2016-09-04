@@ -34,6 +34,7 @@ setup(
     tests_require=[
         "coverage",
         "flake8",
+        "nose2",
     ],
     classifiers=[
         "Development Status :: 3 - Alpha",
