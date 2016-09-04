@@ -27,6 +27,14 @@ class AIOTestCase(TestCase, metaclass=AIOMask):
         self.loop.run_until_complete(f)
         return f.result()
 
+    def ensure_future(self, result):
+        try:
+            return asyncio.ensure_future(result)
+        except TypeError:
+            f = asyncio.Future()
+            f.set_result(result)
+            return f
+
     async def inner_run(self, result=None):
         orig_result = result
         if result is None:
@@ -58,21 +66,15 @@ class AIOTestCase(TestCase, metaclass=AIOMask):
             self._outcome = outcome
 
             with outcome.testPartExecutor(self):
-                o = self.setUp()
-                if isinstance(o, CoroutineType):
-                    await o
+                await self.ensure_future(self.setUp())
             if outcome.success:
                 outcome.expecting_failure = expecting_failure
                 with outcome.testPartExecutor(self, isTest=True):
                     # wrapped into function to prevent generator check return true
-                    o = testMethod()()
-                    if isinstance(o, CoroutineType):
-                        await o
+                    await self.ensure_future(testMethod()())
                 outcome.expecting_failure = False
                 with outcome.testPartExecutor(self):
-                    o = self.tearDown()
-                    if isinstance(o, CoroutineType):
-                        await o
+                    await self.ensure_future(self.tearDown())
 
             self.doCleanups()
             for test, reason in outcome.skipped:
