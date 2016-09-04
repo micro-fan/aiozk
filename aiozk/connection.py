@@ -146,9 +146,9 @@ class Connection(object):
         while not self.closing:
             try:
                 xid, zxid, response = await self.read_response()
-            # except iostream.StreamClosedError:
-            #    return
-            except Exception:
+            except ConnectionAbortedError:
+                return
+            except Exception as e:
                 log.exception("Error reading response.")
                 self.abort()
                 return
@@ -170,6 +170,8 @@ class Connection(object):
 
     async def read_response(self, initial_connect=False):
         raw_size = await self.reader.read(size_struct.size)
+        if raw_size == b'':
+            raise ConnectionAbortedError
         size = size_struct.unpack(raw_size)[0]
 
         # connect and close op replies don't contain a reply header

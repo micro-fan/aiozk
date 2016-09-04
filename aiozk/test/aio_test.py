@@ -21,9 +21,10 @@ class AIOMask(type):
 
 class AIOTestCase(TestCase, metaclass=AIOMask):
     def run(self, result=None):
+        self.loop = asyncio.get_event_loop()
         out = self.inner_run(result)
         f = asyncio.ensure_future(out)
-        asyncio.get_event_loop().run_until_complete(f)
+        self.loop.run_until_complete(f)
         return f.result()
 
     async def inner_run(self, result=None):
