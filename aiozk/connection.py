@@ -154,7 +154,6 @@ class Connection(object):
                 return
 
             payload_log.debug("[RECV] (xid: %s) %s", xid, response)
-            log.warn("[RECV] (xid: %s) %s", xid, response)
 
             if xid == protocol.WATCH_XID:
                 self.watch_handler(response)

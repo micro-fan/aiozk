@@ -14,6 +14,7 @@ class Barrier(Recipe):
 
     async def create(self):
         await self.ensure_path()
+        await self.create_znode(self.path)
 
     async def lift(self):
         try:
