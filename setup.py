@@ -16,6 +16,20 @@ setup(
     install_requires=[
     ],
     entry_points={
+        "aiozk.recipes": [
+            "data_watcher = aiozk.recipes.data_watcher:DataWatcher",
+            "children_watcher = aiozk.recipes.children_watcher:ChildrenWatcher",
+            "lock = aiozk.recipes.lock:Lock",
+            "shared_lock = aiozk.recipes.shared_lock:SharedLock",
+            "lease = aiozk.recipes.lease:Lease",
+            "barrier = aiozk.recipes.barrier:Barrier",
+            "double_barrier = aiozk.recipes.double_barrier:DoubleBarrier",
+            "election = aiozk.recipes.election:LeaderElection",
+            "party = aiozk.recipes.party:Party",
+            "counter = aiozk.recipes.counter:Counter",
+            "tree_cache = aiozk.recipes.tree_cache:TreeCache",
+            "allocator = aiozk.recipes.allocator:Allocator",
+        ],
     },
     tests_require=[
         "coverage",

@@ -72,7 +72,7 @@ class ZNodeCache(object):
         return self.children[name]
 
     async def start(self):
-        data, children = yield [
+        data, children = await [
             self.client.get_data(self.path),
             self.client.get_children(self.path)
         ]
