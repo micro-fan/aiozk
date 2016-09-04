@@ -6,6 +6,6 @@ services:
 
   aiozk:
     build: .
-    command: nose2
+    command: /bin/bash -c 'python3 setup.py install && nose2'
     depends_on:
       - zk
