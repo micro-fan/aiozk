@@ -1,9 +1,10 @@
 import asyncio
 
-from aiozk import ZKClient
 from .base import ZKBase
 
+
 NAME = '/test_barrier'
+
 
 class TestBarrier(ZKBase):
     async def worker(self):
@@ -40,7 +41,7 @@ class TestDoubleBarrier(ZKBase):
         self.lifted = False
         self.num_workers = 0
         workers = []
-        target = 6
+        target = 8
         for x in range(target):
             self.num_workers += 1
             workers.append(asyncio.ensure_future(self.worker(x, target)))

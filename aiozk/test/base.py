@@ -1,5 +1,5 @@
 import os
-from aiozk import ZKClient
+from aiozk import ZKClient, exc
 from .aio_test import AIOTestCase
 
 
@@ -18,9 +18,30 @@ class ZKBase(AIOTestCase):
         self.clients = []
         self.c = ZKClient(HOST, chroot='/test_aiozk')
         await self.c.start()
+        await self.c.deleteall('')
+        await self.c.create('')
 
     async def tearDown(self):
         for c in self.clients:
             await c.close()
-        await self.c.delete('/')
+        try:
+            await self.c.delete('/')
+        except exc.NotEmpty:
+            await self.dump_tree()
+            await self.c.deleteall('')
         await self.c.close()
+
+    async def dump_tree(self, base='/'):
+        out = list(await self.get_tree(base))
+        print('Tree dump: {}'.format(out))
+        return out
+
+    async def get_tree(self, curr='/'):
+        out = [curr]
+        childs = await self.c.get_children(curr)
+        for c in childs:
+            # eliminate double slash: //root = '/'.join('/', 'root')
+            if curr == '/':
+                curr = ''
+            out.append(await self.get_tree('/'.join([curr, c])))
+        return out
