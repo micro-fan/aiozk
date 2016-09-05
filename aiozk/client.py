@@ -169,6 +169,12 @@ class ZKClient(object):
 
         await self.send(protocol.DeleteRequest(path=path, version=version))
 
+    async def deleteall(self, path):
+        childs = await self.get_children(path)
+        for child in childs:
+            await self.deleteall('/'.join([path, child]))
+        await self.delete(path, force=True)
+
     async def get_data(self, path, watch=False):
         path = self.normalize_path(path)
 
