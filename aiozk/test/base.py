@@ -18,8 +18,9 @@ class ZKBase(AIOTestCase):
         self.clients = []
         self.c = ZKClient(HOST, chroot='/test_aiozk')
         await self.c.start()
-        await self.c.deleteall('')
-        await self.c.create('')
+        if len(await self.c.get_children('/')) > 0:
+            await self.c.deleteall('')
+            await self.c.create('')
 
     async def tearDown(self):
         for c in self.clients:
