@@ -190,8 +190,10 @@ class Session(object):
         timeout = self.timeout / HEARTBEAT_FREQUENCY
         if self.heartbeat_handle:
             self.heartbeat_handle.cancel()
-        self.heartbeat_handle = self.loop.call_later(timeout, self.loop.create_task,
-                                                     self.heartbeat())
+        self.heartbeat_handle = self.loop.call_later(timeout, self.create_heartbeat)
+
+    def create_heartbeat(self):
+        self.loop.create_task(self.heartbeat())
 
     async def heartbeat(self):
         if self.closing:
@@ -264,8 +266,6 @@ class Session(object):
 
     async def close(self):
         self.closing = True
-
         await self.send(protocol.CloseRequest())
         self.state.transition_to(States.LOST)
-
         await self.conn.close(self.timeout)
