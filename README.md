@@ -1,5 +1,7 @@
 # Asyncio zookeeper client
 
+[![Build Status](https://travis-ci.org/tipsi/aiozk.svg?branch=master)](https://travis-ci.org/tipsi/aiozk)
+
 **Based on [wglass/zoonado](https://github.com/wglass/zoonado/tree/master/zoonado) implementation**
 
 ## Installation
