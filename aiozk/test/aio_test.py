@@ -1,4 +1,5 @@
 import asyncio
+from functools import wraps
 from types import CoroutineType
 from unittest import TestCase
 from unittest.case import _Outcome
@@ -6,6 +7,7 @@ from unittest.case import _Outcome
 
 class AIOMask(type):
     def wrap_func(func):
+        @wraps(func)
         def ret(*args, **kwargs):
             def inner():
                 return func(*args, **kwargs)
