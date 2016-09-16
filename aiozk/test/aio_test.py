@@ -29,6 +29,12 @@ class AIOTestCase(TestCase, metaclass=AIOMask):
         self.loop.run_until_complete(f)
         return f.result()
 
+    async def assertRaises(self, CatchException, callable, *args, **kwargs):
+        try:
+            await self.ensure_future(callable(*args, **kwargs))
+        except CatchException:
+            pass
+
     def ensure_future(self, result):
         try:
             return asyncio.ensure_future(result)
