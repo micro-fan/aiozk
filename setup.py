@@ -16,6 +16,7 @@ setup(
     keywords=["zookeeper", "asyncio", "async"],
     packages=find_packages(exclude=["tests", "tests.*"]),
     install_requires=[
+        'tipsi_tools>=0.9.0',
     ],
     entry_points={
         "aiozk.recipes": [
