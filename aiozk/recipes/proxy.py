@@ -1,13 +1,26 @@
 import logging
-import pkg_resources
+from importlib import import_module
 
 from .recipe import Recipe
 
 
-ENTRY_POINT = "aiozk.recipes"
-
 log = logging.getLogger(__name__)
 
+
+RECIPES = {
+    'data_watcher': 'DataWatcher',
+    'children_watcher': 'ChildrenWatcher',
+    'lock': 'Lock',
+    'shared_lock': 'SharedLock',
+    'lease': 'Lease',
+    'barrier': 'Barrier',
+    'double_barrier': 'DoubleBarrier',
+    'election': 'LeaderElection',
+    'party': 'Party',
+    'counter': 'Counter',
+    'tree_cache': 'TreeCache',
+    'allocator': 'Allocator',
+}
 
 class RecipeClassProxy(object):
 
@@ -36,27 +49,15 @@ class RecipeProxy(object):
         return RecipeClassProxy(self.client, self.installed_classes[name])
 
     def gather_installed_classes(self):
-        for entry_point in pkg_resources.iter_entry_points(ENTRY_POINT):
-            try:
-                recipe_class = entry_point.load()
-            except ImportError as e:
-                log.error(
-                    "Could not load recipe %s: %s", entry_point.name, str(e)
-                )
-                continue
+        for module, name in RECIPES.items():
+            recipe_class = getattr(import_module('aiozk.recipes.{}'.format(module)), name)
 
             if not issubclass(recipe_class, Recipe):
-                log.error(
-                    "Could not load recipe %s: not a Recipe subclass",
-                    entry_point.name
-                )
+                log.error("Could not load recipe %s: not a Recipe subclass", recipe_class.__name__)
                 continue
 
             if not recipe_class.validate_dependencies():
-                log.error(
-                    "Could not load recipe %s: %s has unmet dependencies",
-                    entry_point.name, recipe_class.__name__
-                )
+                log.error("Could not load recipe %s has unmet dependencies", recipe_class.__name__)
                 continue
 
             log.debug("Loaded recipe %s", recipe_class.__name__)
