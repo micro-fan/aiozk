@@ -1,7 +1,7 @@
 FROM ubuntu:xenial
 
-RUN apt-get update
-RUN apt-get install -y git \
+RUN apt-get update && \
+    apt-get install -y git \
                        python3-pip \
                        python3.5
 
