@@ -66,9 +66,6 @@ class Session(object):
 
     async def start(self):
         self.loop = asyncio.get_event_loop()
-        # io_loop = ioloop.IOLoop.current()
-        # io_loop.add_callback(self.set_heartbeat)
-        # io_loop.add_callback(self.repair_loop)
         self.loop.call_soon(self.set_heartbeat)
         self.loop.create_task(self.repair_loop())
         await self.ensure_safe_state()
@@ -94,16 +91,11 @@ class Session(object):
         old_conn = self.conn
         self.conn = conn
 
-        # io_loop = ioloop.IOLoop.current()
-
         if old_conn:
-            # TODO add timeout
-            # io_loop.add_callback(old_conn.close, self.timeout)
-            self.loop.create_task(old_conn.close(3))
+            self.loop.create_task(old_conn.close(self.timeout))
 
         if conn.start_read_only:
-            # io_loop.add_callback(self.find_server, allow_read_only=False)
-            self.loop.create_task(self.find_server(False))
+            self.loop.create_task(self.find_server(allow_read_only=False))
 
     async def make_connection(self, host, port):
         conn = Connection(host, port, watch_handler=self.event_dispatch)

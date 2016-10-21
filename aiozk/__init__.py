@@ -1,4 +1,4 @@
-version_info = (0, 1, 7)
+version_info = (0, 2, '0-alpha')
 
 __version__ = ".".join((str(point) for point in version_info))
 

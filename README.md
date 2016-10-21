@@ -28,3 +28,20 @@ async def run():
 loop = asyncio.get_event_loop()
 loop.run_until_complete(run())
 ```
+
+## Recipes
+
+You may use recipes, similar to zoonado, kazoo and other libs:
+
+```python
+# assuming zk is aiozk.ZKClient
+
+barrier = zk.recipes.Barrier('/barrier_name')
+await barrier.create()
+await barrier.lift()
+await barrier.wait()
+```
+
+[Full list of recipes](https://github.com/tipsi/aiozk/tree/master/aiozk/recipes)
+
+To understand ideas behind recipes [please read this](https://zookeeper.apache.org/doc/trunk/recipes.html) and [event more recipes here](http://curator.apache.org/curator-recipes/index.html). Make sure you're familiar with all recipes before do something new by youself, exceptionally when it involves more than few basic zookeeper calls.
