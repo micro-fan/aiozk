@@ -5,6 +5,31 @@ services:
     build:
       context: .
       dockerfile: ./docker/zookeeper.dockerfile
+    image: tipsi_zookeeper:latest
+
+  zk2:
+    image: tipsi_zookeeper:latest
+    environment:
+      - ZK_SEED=zk
+      - ZK_ID=2
+
+  zk3:
+    image: tipsi_zookeeper:latest
+    environment:
+      - ZK_SEED=zk
+      - ZK_ID=3
+
+  zk4:
+    image: tipsi_zookeeper:latest
+    environment:
+      - ZK_SEED=zk
+      - ZK_ID=4
+
+  zk5:
+    image: tipsi_zookeeper:latest
+    environment:
+      - ZK_SEED=zk
+      - ZK_ID=5
 
   aiozk:
     build: .
