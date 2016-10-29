@@ -19,7 +19,8 @@ class Party(SequentialRecipe):
 
     async def join(self):
         await self.create_unique_znode(self.name)
-        await self.analyze_siblings()
+        _, siblings = await self.analyze_siblings()
+        self.update_members(siblings)
         self.watcher.add_callback(self.base_path, self.update_members)
 
     async def wait_for_change(self):
