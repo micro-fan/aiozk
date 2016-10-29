@@ -1,35 +1,17 @@
 version: '2'
 
 services:
-  zk:
+  zk_seed:
     build:
       context: .
       dockerfile: ./docker/zookeeper.dockerfile
+    container_name: zk_seed  # prevent scaling seed zk
     image: tipsi_zookeeper:latest
 
-  zk2:
+  zk:
     image: tipsi_zookeeper:latest
     environment:
-      - ZK_SEED=zk
-      - ZK_ID=2
-
-  zk3:
-    image: tipsi_zookeeper:latest
-    environment:
-      - ZK_SEED=zk
-      - ZK_ID=3
-
-  zk4:
-    image: tipsi_zookeeper:latest
-    environment:
-      - ZK_SEED=zk
-      - ZK_ID=4
-
-  zk5:
-    image: tipsi_zookeeper:latest
-    environment:
-      - ZK_SEED=zk
-      - ZK_ID=5
+      - ZK_SEED=zk_seed
 
   aiozk:
     build: .

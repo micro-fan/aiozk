@@ -2,20 +2,25 @@
 import asyncio
 import os
 import socket
-from contextlib import contextmanager
+import sys
+import time
 
 from aiozk import ZKClient
 from tipsi_tools.unix import succ, wait_socket
 
 
 MYIP = socket.gethostbyname(socket.gethostname())
-MYID = os.environ.get('ZK_ID', 1)
 
 DYN_CFG = '/srv/zookeeper/zoo.cfg.dynamic'
-pat = 'server.{myid}={myip}:2888:3888:{role};2181'.format
+pat = 'server.{myid}={myip}:2888:3888:{role};0.0.0.0:2181'.format
 INIT = '/opt/zookeeper/bin/zkServer-initialize.sh --force --myid={myid}'.format
 RUN = '/opt/zookeeper/bin/zkServer.sh start-foreground'
 RECONF = '/opt/zookeeper/bin/zkCli.sh -server {seed}:2181 reconfig -add "{cfg}"'.format
+
+
+def printe(msg):
+    print(msg, file=sys.stderr)
+    sys.stderr.flush()
 
 
 class ZK:
@@ -31,8 +36,8 @@ class ZK:
     async def __aexit__(self, _type, _ex, _tb):
         await self.zk.close()
 
+
 def write_dyn_cfg(myid, myip, others=None):
-    print(os.listdir('/opt/zookeeper'))
     if others:
         role = 'observer'
     else:
@@ -45,15 +50,84 @@ def write_dyn_cfg(myid, myip, others=None):
             f.write(pat(myid=myid, myip=myip, role=role))
         else:
             f.write(pat(myid=myid, myip=myip, role=role))
-    init(MYID)
+    init(myid)
+    with open(DYN_CFG) as f:
+        printe('CONFIG: {}\n\n'.format(f.read()))
     if others:
-        init(MYID)
+        init(myid)
         succ(['/opt/zookeeper/bin/zkServer.sh start'], False)
         cfg = pat(myid=myid, myip=myip, role='participant')
         seed = os.environ.get('ZK_SEED')
-        print('Reconfiguring...')
+        printe('Reconfiguring...')
         succ([RECONF(seed=seed, cfg=cfg)])
-        succ(['/opt/zookeeper/bin/zkServer.sh stop'], False)
+
+BASE = '/zk_start/id/'
+LOCK = '/zk_start/lock'
+ID = '/zk_start/id/id_'
+
+PREV = None
+
+async def get_prev(zk, ret):
+    global PREV
+    if PREV:
+        return PREV
+    ret = ret.split('/')[-1]
+    childs = sorted(await zk.get_children(BASE))
+    myidx = childs.index(ret)
+    if myidx == 0:
+        return
+    node = childs[myidx-1]
+    ip = (await zk.get_data(BASE+node)).decode('utf8')
+    PREV = ip
+    return ip
+
+
+# TODO: replace with aiozk.recipe.Lock after it fixed
+class MYLock:
+    def __init__(self, zk, name):
+        self.zk = zk
+        self.name = name
+
+    async def __aenter__(self):
+        while 1:
+            try:
+                await self.zk.create(self.name, ephemeral=True)
+                break
+            except Exception as e:
+                await asyncio.sleep(1)
+        return self
+
+    async def __aexit__(self, _type, _exc, _tb):
+        await self.zk.delete(self.name)
+
+
+async def dyn_cfg(seed):
+    myid = None
+    locked = False
+    others = None
+    while 1:
+        printe('loop')
+        try:
+            async with ZK(seed) as zk:
+                await zk.ensure_path(BASE)
+                if not myid:
+                    ret = await zk.create(ID, data=str(MYIP), sequential=True)
+                    myid = int(ret.split('_')[-1]) + 2
+                    printe('MYID RET: {!r}'.format(myid))
+                async with MYLock(zk, LOCK):
+                    locked = True
+                    others = await get_others(seed)
+                    write_dyn_cfg(myid, MYIP, others)
+                break
+        except Exception as e:
+            printe('EXCEPTION: {}'.format(e))
+            if locked:
+                printe('LOCKED BREAK')
+                break
+            printe('retry')
+    while 1:
+        printe('ethernal loop')
+        time.sleep(99999999)
 
 
 def init(myid):
@@ -61,13 +135,14 @@ def init(myid):
 
 
 def run():
+    with open(DYN_CFG) as f:
+        printe('RUN EXISTING CONFIG: {}'.format(f.read()))
     succ([RUN], False)
 
 
-async def get_others():
-    seed = os.environ.get('ZK_SEED')
+async def get_others(seed):
     if not seed:
-        print('No seed -> master')
+        printe('No seed -> master')
         return None
 
     async with ZK(seed) as zk:
@@ -75,17 +150,20 @@ async def get_others():
         servers = servers.decode('utf8').split('\n')
         servers = [x for x in servers if x.startswith('server')]
         servers = '\n'.join(servers)
-        print('Servers: {!r}'.format(servers))
+        printe('Servers: {!r}'.format(servers))
         return servers
 
 
 async def main():
-    await asyncio.sleep(int(MYID)*5)
     if not os.path.exists(DYN_CFG):
-        others = await get_others()
-        write_dyn_cfg(MYID, MYIP, others)
-        if others:
-            await asyncio.sleep(1)
+        seed = os.environ.get('ZK_SEED')
+        if seed:
+            try:
+                await dyn_cfg(seed)
+            except Exception as e:
+                printe('EXC: {}'.format(e))
+        else:
+            write_dyn_cfg(1, MYIP)
     run()
 
 

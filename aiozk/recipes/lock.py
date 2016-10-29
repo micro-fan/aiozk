@@ -12,5 +12,4 @@ class Lock(BaseLock):
                 result = await self.wait_in_line("lock", timeout)
             except exc.SessionLost:
                 continue
-
         return result

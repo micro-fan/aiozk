@@ -65,14 +65,14 @@ class BaseLock(SequentialRecipe):
             state["acquired"] = False
             await self.delete_unique_znode(znode_label)
 
-        @contextlib.contextmanager
-        def context_manager():
-            try:
-                yield still_acquired
-            finally:
-                asyncio.ensure_future(on_exit())
+        class Lock:
+            async def __aenter__(self):
+                return self
 
-        return context_manager()
+            async def __aexit__(self):
+                await on_exit()
+
+        return Lock()
 
 
 class LockLostError(exc.ZKError):

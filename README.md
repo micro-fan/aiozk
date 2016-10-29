@@ -6,7 +6,7 @@
 
 ## Status
 
-Have no major bugs in client/session/connection, but recipes are just ported and require more tests. 
+Have no major bugs in client/session/connection, but recipes are just ported and require more tests.
 So you can expect that recipes with tests are working.
 
 ## Installation
@@ -55,3 +55,7 @@ To understand ideas behind recipes [please read this](https://zookeeper.apache.o
 
 Most of tests are integration tests and running on real zookeeper instances.
 We've chosen `zookeeper 3.5` version, since it has ability to dynamic reconfiguration and we're going to do all connecting/reconnecting/watches tests on zk docker cluster as this gives us ability to restart any server and see what happens.
+
+```sh
+docker-compose rm -fv && docker-compose build zk && docker-compose scale zk=7 && docker-compose up zk_seed zk
+```

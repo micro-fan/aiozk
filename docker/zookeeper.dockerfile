@@ -15,8 +15,9 @@ RUN curl -sS http://ftp.byfly.by/pub/apache.org/zookeeper/zookeeper-${ZOOKEEPER_
 
 RUN pip3 install tipsi_tools aiozk docker-py
 
-VOLUME ["/srv/zookeeper"]
+VOLUME ["/srv/zookeeper", "/opt/zookeeper/conf"]
+
 ADD ./docker/zk_start.py /
 ADD ./docker/zoo.cfg /opt/zookeeper/conf/
-RUN chmod a+x /zk_start.py && ln -s /opt/zookeeper/bin/zkCli.sh /usr/bin/zk
+RUN chmod a+x /zk_start.py && ln -s /opt/zookeeper/bin/zkCli.sh /usr/bin/zk && ln -s /opt/zookeeper/bin/*.sh /usr/bin/.
 CMD ./zk_start.py
