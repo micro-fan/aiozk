@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 import asyncio
 import os
+import shutil
 import socket
 import sys
 import time
+import glob
 
 from aiozk import ZKClient
 from tipsi_tools.unix import succ, wait_socket
@@ -11,7 +13,7 @@ from tipsi_tools.unix import succ, wait_socket
 
 MYIP = socket.gethostbyname(socket.gethostname())
 
-DYN_CFG = '/srv/zookeeper/zoo.cfg.dynamic'
+DYN_CFG = '/opt/zookeeper/conf/zoo.cfg.dynamic'
 pat = 'server.{myid}={myip}:2888:3888:{role};0.0.0.0:2181'.format
 INIT = '/opt/zookeeper/bin/zkServer-initialize.sh --force --myid={myid}'.format
 RUN = '/opt/zookeeper/bin/zkServer.sh start-foreground'
@@ -125,13 +127,23 @@ async def dyn_cfg(seed):
                 printe('LOCKED BREAK')
                 break
             printe('retry')
+    printe('ethernal loop')
     while 1:
-        printe('ethernal loop')
-        time.sleep(99999999)
+        time.sleep(1)
 
 
 def init(myid):
     succ([INIT(myid=myid)])
+
+
+def write_latest():
+    out = sorted(glob.glob('{}.*'.format(DYN_CFG)))
+    if len(out) > 0:
+        shutil.copy(out[-1], DYN_CFG)
+    for f in glob.glob('{}.*'.format(DYN_CFG)):
+        os.unlink(f)
+    for f in glob.glob('/srv/zookeeper/version-2/*'):
+        os.unlink(f)
 
 
 def run():

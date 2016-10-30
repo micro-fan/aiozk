@@ -5,13 +5,21 @@ services:
     build:
       context: .
       dockerfile: ./docker/zookeeper.dockerfile
-    container_name: zk_seed  # prevent scaling seed zk
+    container_name: aiozk_zk_seed  # prevent scaling seed zk
     image: tipsi_zookeeper:latest
 
   zk:
     image: tipsi_zookeeper:latest
     environment:
       - ZK_SEED=zk_seed
+
+  diag:
+    build: .
+    command: ./diag.py
+    volumes:
+      - .:/code
+    depends_on:
+      - zk
 
   aiozk:
     build: .

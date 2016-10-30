@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+/opt/zookeeper/bin/zkCli.sh $@

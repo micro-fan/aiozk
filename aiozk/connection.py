@@ -40,6 +40,7 @@ class Connection(object):
         self.watch_handler = watch_handler
 
         self.opcode_xref = {}
+        self.host_ip = None
 
         self.pending = {}
         self.pending_specials = collections.defaultdict(list)
@@ -50,13 +51,12 @@ class Connection(object):
         log.debug("Initial connection to server %s:%d", self.host, self.port)
         self.reader, self.writer = await asyncio.open_connection(self.host, self.port,
                                                                  loop=self.loop)
-        # stream = await client.connect(self.host, self.port)
+
+        self.host_ip = self.reader._transport._sock.getpeername()[0]
 
         log.debug("Sending 'srvr' command to %s:%d", self.host, self.port)
-        # await stream.write("srvr")
         self.writer.write(b"srvr")
 
-        # answer = await stream.read_until_close()
         answer = await self.reader.read()
 
         version_line = answer.split(b"\n")[0]
@@ -69,7 +69,6 @@ class Connection(object):
         log.debug("Read-only mode: %s", self.start_read_only)
 
         log.debug("Actual connection to server %s:%d", self.host, self.port)
-        # self.stream = await client.connect(self.host, self.port)
         self.reader, self.writer = await asyncio.open_connection(self.host, self.port,
                                                                  loop=self.loop)
 
@@ -212,17 +211,20 @@ class Connection(object):
         def abort_pending(f):
             exc_info = sys.exc_info()
             # TODO
+            log.debug('Abort pending: {}'.format(f))
             if False and any(exc_info):
                 f.set_exc_info(exc_info)
             else:
                 f.set_exception(exception(self.host, self.port))
 
         for pending in self.drain_all_pending():
+            if pending.done() or pending.cancelled():
+                continue
             abort_pending(pending)
 
     def drain_all_pending(self):
         for special_xid in protocol.SPECIAL_XIDS:
-            for _, f in iterables.drain(self.pending_specials[special_xid]):
+            for f in iterables.drain(self.pending_specials[special_xid]):
                 yield f
         for _, f in iterables.drain(self.pending):
             yield f
@@ -230,23 +232,23 @@ class Connection(object):
     async def close(self, timeout):
         if self.closing:
             return
-
+        log.warn('Pendings: {} {}'.format(self.pending, self.pending_specials))
         self.closing = True
-        # self.writer.close()
-        # await asyncio.sleep(0.01)
-        # return
-
-        # pending_with_timeouts = []
-        # TODO:
-        # for pending in self.drain_all_pending():
-        #    pending_with_timeouts.append(gen.with_timeout(timeout, pending))
 
         try:
             # await list(pending_with_timeouts)
-            wlist = list(self.drain_all_pending())
-            if len(wlist) > 0:
-                await asyncio.wait(wlist, timeout=timeout)
+            self.abort(exception=exc.TimeoutError)
+            # wlist = list(self.drain_all_pending())
+            # log.warn('Wait for list: {} {}'.format(wlist, self.pending))
+            # if len(wlist) > 0:
+            #     await asyncio.wait(wlist, timeout=timeout)
         except asyncio.TimeoutError:
+            log.warn('ABORT Timeout')
             await self.abort(exception=exc.TimeoutError)
+        except Exception as e:
+            log.exception('in close: {}'.format(e))
+            raise e
         finally:
+            log.debug('Closing writer')
             self.writer.close()
+            log.debug('Writer closed')

@@ -11,6 +11,6 @@ WORKDIR /code
 
 RUN pip3 install nose2
 
-
+RUN apt install -y tcpdump
 ADD . /code
 WORKDIR /code
