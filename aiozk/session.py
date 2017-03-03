@@ -84,6 +84,8 @@ class Session(object):
                 conn = await self.make_connection(host, port)
                 if not conn or (conn.start_read_only and not allow_read_only):
                     continue
+                else:
+                    break
 
             if not conn:
                 log.warn("No servers available, will keep trying.")
@@ -151,7 +153,7 @@ class Session(object):
             try:
                 await asyncio.wait_for(self.establish_session(), self.timeout)
             except (exc.SessionLost, asyncio.TimeoutError) as e:
-                logging.info('Session closed: {}'.format(e))
+                log.info('Session closed: {}'.format(e))
                 self.conn.abort(exc.SessionLost)
                 await self.conn.close(self.timeout)  # TODO: make real timeout
                 self.session_id = None

@@ -69,6 +69,7 @@ class Connection(object):
         log.debug("Read-only mode: %s", self.start_read_only)
 
         log.debug("Actual connection to server %s:%d", self.host, self.port)
+        self.writer.close()
         self.reader, self.writer = await asyncio.open_connection(self.host, self.port,
                                                                  loop=self.loop)
 
