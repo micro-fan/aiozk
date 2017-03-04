@@ -84,8 +84,7 @@ class Session(object):
                 conn = await self.make_connection(host, port)
                 if not conn or (conn.start_read_only and not allow_read_only):
                     continue
-                else:
-                    break
+                break
 
             if not conn:
                 log.warn("No servers available, will keep trying.")
