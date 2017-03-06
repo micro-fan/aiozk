@@ -32,7 +32,7 @@ class BaseWatcher(Recipe):
 
     async def watch_loop(self, path):
         while self.callbacks[path]:
-            wait = self.client.wait_for_event(self.watched_event, path)
+            await self.client.wait_for_event(self.watched_event, path)
 
             log.debug("Fetching data for %s", path)
             try:
@@ -40,7 +40,6 @@ class BaseWatcher(Recipe):
             except exc.NoNode:
                 return
 
-            await wait
 
             for callback in self.callbacks[path]:
                 asyncio.ensure_future(callback(result))
