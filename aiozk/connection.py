@@ -10,7 +10,7 @@ from time import time
 
 from aiozk import protocol, iterables, exc
 
-DEFAULT_READ_TIMEOUT = 3
+DEFAULT_READ_TIMEOUT = 1
 
 version_regex = re.compile(rb'Zookeeper version: (\d)\.(\d)\.(\d)-.*')
 
@@ -174,15 +174,18 @@ class Connection(object):
 
     async def _read(self, size=-1):
         remaining_size = size
-        payload = b''
         end_time = time() + self.read_timeout
+        payload = []
         while remaining_size and (time() < end_time):
-            chunk = await self.reader.read(remaining_size)
-            payload += chunk
-            remaining_size -= len(chunk)
+            remaining_time = end_time - time()
+            done, _ = await asyncio.wait([self.reader.read(remaining_size)], timeout=remaining_time)
+            if done:
+                chunk = done.pop().result()
+                payload.append(chunk)
+                remaining_size -= len(chunk)
         if remaining_size:
             raise exc.UnfinishedRead
-        return payload
+        return b''.join(payload)
 
     async def read_response(self, initial_connect=False):
         raw_size = await self._read(size_struct.size)
