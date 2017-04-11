@@ -28,6 +28,10 @@ class TimeoutError(ZKError):
     pass
 
 
+class UnfinishedRead(ZKError):
+    pass
+
+
 class FailedRetry(ZKError):
     pass
 

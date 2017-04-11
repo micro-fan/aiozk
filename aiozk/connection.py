@@ -4,11 +4,13 @@ import logging
 import re
 import struct
 import sys
+from time import time
 
 # from tornado import ioloop, iostream, gen, concurrent, tcpclient
 
 from aiozk import protocol, iterables, exc
 
+DEFAULT_READ_TIMEOUT = 3
 
 version_regex = re.compile(rb'Zookeeper version: (\d)\.(\d)\.(\d)-.*')
 
@@ -25,7 +27,7 @@ if payload_log.level == logging.NOTSET:
 
 class Connection(object):
 
-    def __init__(self, host, port, watch_handler):
+    def __init__(self, host, port, watch_handler, read_timeout):
         self.loop = asyncio.get_event_loop()
         self.host = host
         self.port = int(port)
@@ -46,6 +48,8 @@ class Connection(object):
         self.pending_specials = collections.defaultdict(list)
 
         self.watches = collections.defaultdict(list)
+
+        self.read_timeout = read_timeout or DEFAULT_READ_TIMEOUT
 
     async def connect(self):
         log.debug("Initial connection to server %s:%d", self.host, self.port)
@@ -168,19 +172,31 @@ class Connection(object):
             else:
                 f.set_result((zxid, response))
 
+    async def _read(self, size=-1):
+        remaining_size = size
+        payload = b''
+        end_time = time() + self.read_timeout
+        while remaining_size and (time() < end_time):
+            chunk = await self.reader.read(remaining_size)
+            payload += chunk
+            remaining_size -= len(chunk)
+        if remaining_size:
+            raise exc.UnfinishedRead
+        return payload
+
     async def read_response(self, initial_connect=False):
-        raw_size = await self.reader.read(size_struct.size)
+        raw_size = await self._read(size_struct.size)
         if raw_size == b'':
             raise ConnectionAbortedError
         size = size_struct.unpack(raw_size)[0]
 
         # connect and close op replies don't contain a reply header
         if initial_connect or self.pending_specials[protocol.CLOSE_XID]:
-            raw_payload = await self.reader.read(size)
+            raw_payload = await self._read(size)
             response = protocol.ConnectResponse.deserialize(raw_payload)
             return (None, None, response)
 
-        raw_header = await self.reader.read(reply_header_struct.size)
+        raw_header = await self._read(reply_header_struct.size)
         xid, zxid, error_code = reply_header_struct.unpack_from(raw_header)
 
         if error_code:
@@ -188,7 +204,7 @@ class Connection(object):
 
         size -= reply_header_struct.size
 
-        raw_payload = await self.reader.read(size)
+        raw_payload = await self._read(size)
 
         if xid == protocol.WATCH_XID:
             response = protocol.WatchEvent.deserialize(raw_payload)
