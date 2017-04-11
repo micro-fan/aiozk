@@ -61,7 +61,7 @@ class Connection(object):
         log.debug("Sending 'srvr' command to %s:%d", self.host, self.port)
         self.writer.write(b"srvr")
 
-        answer = await self._read()
+        answer = await self.reader.read()
 
         version_line = answer.split(b"\n")[0]
         self.version_info = tuple(
