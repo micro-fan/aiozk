@@ -23,7 +23,7 @@ log = logging.getLogger(__name__)
 
 class Session(object):
 
-    def __init__(self, servers, timeout, retry_policy, allow_read_only):
+    def __init__(self, servers, timeout, retry_policy, allow_read_only, read_timeout):
         self.loop = asyncio.get_event_loop()
         self.hosts = []
         for server in servers.split(","):
@@ -47,6 +47,7 @@ class Session(object):
         self.session_id = None
         self.timeout = timeout
         self.password = b'\x00'
+        self.read_timeout = read_timeout
 
         self.heartbeat_handle = None
 
@@ -100,7 +101,7 @@ class Session(object):
             self.loop.create_task(self.find_server(allow_read_only=False))
 
     async def make_connection(self, host, port):
-        conn = Connection(host, port, watch_handler=self.event_dispatch)
+        conn = Connection(host, port, watch_handler=self.event_dispatch, read_timeout=self.read_timeout)
         try:
             await conn.connect()
         except Exception:
