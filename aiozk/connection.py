@@ -10,7 +10,7 @@ from time import time
 
 from aiozk import protocol, iterables, exc
 
-DEFAULT_READ_TIMEOUT = 1
+DEFAULT_READ_TIMEOUT = 3
 
 version_regex = re.compile(rb'Zookeeper version: (\d)\.(\d)\.(\d)-.*')
 
