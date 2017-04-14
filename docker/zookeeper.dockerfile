@@ -9,7 +9,7 @@ RUN apt update && apt install -y \
         python3-pip
 
 ENV ZOOKEEPER_VERSION 3.5.2-alpha
-RUN curl -sS http://ftp.byfly.by/pub/apache.org/zookeeper/zookeeper-${ZOOKEEPER_VERSION}/zookeeper-${ZOOKEEPER_VERSION}.tar.gz | tar -xzf - -C /opt \
+RUN curl -sS http://apache.mirrors.pair.com/zookeeper/zookeeper-${ZOOKEEPER_VERSION}/zookeeper-${ZOOKEEPER_VERSION}.tar.gz | tar -xzf - -C /opt \
   && mv /opt/zookeeper-* /opt/zookeeper \
   && chown -R root:root /opt/zookeeper
 

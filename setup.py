@@ -14,7 +14,7 @@ setup(
     url='http://github.com/tipsi/aiozk',
     license='MIT',
     keywords=['zookeeper', 'asyncio', 'async'],
-    packages=find_packages(exclude=['tests', 'tests.*', 'docker']),
+    packages=find_packages(exclude=['tests', 'tests.*', 'docker', 'TAGS', '.projectile', '*.log']),
     install_requires=[
         'tipsi_tools>=0.9.0',
     ],
