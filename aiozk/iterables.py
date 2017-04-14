@@ -23,4 +23,4 @@ def drain(iterable):
         try:
             yield next_item(iterable)
         except (IndexError, KeyError):
-            raise StopIteration
+            return

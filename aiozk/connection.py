@@ -25,7 +25,7 @@ if payload_log.level == logging.NOTSET:
     payload_log.setLevel(logging.INFO)
 
 
-class Connection(object):
+class Connection:
 
     def __init__(self, host, port, watch_handler, read_timeout):
         self.loop = asyncio.get_event_loop()
@@ -56,7 +56,7 @@ class Connection(object):
         self.reader, self.writer = await asyncio.open_connection(self.host, self.port,
                                                                  loop=self.loop)
 
-        self.host_ip = self.reader._transport._sock.getpeername()[0]
+        self.host_ip = self.writer.transport.get_extra_info('peername')[0]
 
         log.debug("Sending 'srvr' command to %s:%d", self.host, self.port)
         self.writer.write(b"srvr")
@@ -64,9 +64,10 @@ class Connection(object):
         answer = await self.reader.read()
 
         version_line = answer.split(b"\n")[0]
-        self.version_info = tuple(
-            map(int, version_regex.match(version_line).groups())
-        )
+        match = version_regex.match(version_line)
+        if match is None:
+            raise ConnectionError
+        self.version_info = tuple(map(int, match.groups()))
         self.start_read_only = bool(b"READ_ONLY" in answer)
 
         log.debug("Version info: %s", self.version_info)
@@ -254,7 +255,8 @@ class Connection(object):
     async def close(self, timeout):
         if self.closing:
             return
-        log.warn('Pendings: {} {}'.format(self.pending, self.pending_specials))
+        if self.pending or (self.pending_specials and self.pending_specials != {None: []}):
+            log.warning('Pendings: {}; specials:  {}'.format(self.pending, self.pending_specials))
         self.closing = True
 
         try:
