@@ -127,7 +127,7 @@ async def dyn_cfg(seed):
                 printe('LOCKED BREAK')
                 break
             printe('retry')
-    printe('ethernal loop')
+    printe('eternal loop')
     while 1:
         time.sleep(1)
 
