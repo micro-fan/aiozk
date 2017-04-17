@@ -10,25 +10,24 @@ class TestBarrier(ZKBase):
     async def worker(self):
         barrier = self.c.recipes.Barrier(NAME)
         await barrier.wait()
-        while True:
-            self.assertEqual(self.lifted, True)
-            await asyncio.sleep(0.3)
+        await asyncio.sleep(0.2)
+        self.assertEqual(self.lifted, True)
 
     async def test_barrier(self):
         self.lifted = False
         barrier = self.c.recipes.Barrier(NAME)
         await barrier.create()
-        asyncio.ensure_future(self.worker())
+        worker = asyncio.ensure_future(self.worker())
         await asyncio.sleep(0.05)
         await barrier.lift()
         self.lifted = True
         await asyncio.sleep(0.1)
+        await worker
 
 
 class TestDoubleBarrier(ZKBase):
     async def worker(self, num, min_workers):
-        c = await self.client()
-        barrier = c.recipes.DoubleBarrier(NAME, min_workers)
+        barrier = self.c.recipes.DoubleBarrier(NAME, min_workers)
 
         await asyncio.sleep(0.01*num)
         await barrier.enter()
