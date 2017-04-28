@@ -1,13 +1,12 @@
 import os
+
 from aiozk import ZKClient, exc
 from .aio_test import AIOTestCase
-
 
 HOST = os.environ.get('ZK_HOST', 'zk')
 
 
 class ZKBase(AIOTestCase):
-
     async def client(self):
         c = ZKClient(HOST, chroot='/test_aiozk')
         await c.start()
@@ -38,11 +37,11 @@ class ZKBase(AIOTestCase):
         return out
 
     async def get_tree(self, curr='/'):
-        out = [curr]
-        childs = await self.c.get_children(curr)
-        for c in childs:
+        out = [curr, ]
+        children = await self.c.get_children(curr)
+        for c in children:
             # eliminate double slash: //root = '/'.join('/', 'root')
             if curr == '/':
                 curr = ''
-            out.append(await self.get_tree('/'.join([curr, c])))
+            out.extend(await self.get_tree('/'.join([curr, c])))
         return out
