@@ -23,8 +23,8 @@ log = logging.getLogger(__name__)
 
 class Session(object):
 
-    def __init__(self, servers, timeout, retry_policy, allow_read_only, read_timeout):
-        self.loop = asyncio.get_event_loop()
+    def __init__(self, servers, timeout, retry_policy, allow_read_only, read_timeout, loop=None):
+        self.loop = loop or asyncio.get_event_loop()
         self.hosts = []
         for server in servers.split(","):
             if ":" in server:
