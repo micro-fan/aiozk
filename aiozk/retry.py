@@ -19,7 +19,7 @@ class RetryPolicy(object):
 
         self.timings = collections.defaultdict(list)
 
-    async def enforce(self, request=None):
+    async def enforce(self, request=None, loop=None):
         self.timings[id(request)].append(time.time())
 
         tries = len(self.timings[id(request)])
@@ -36,7 +36,8 @@ class RetryPolicy(object):
             raise exc.FailedRetry
 
         log.debug("Waiting %d seconds until next try.", wait_time)
-        await asyncio.sleep(wait_time)
+        loop = loop or asyncio.get_event_loop()
+        await asyncio.sleep(wait_time, loop=loop)
 
     def clear(self, request):
         self.timings.pop(id(request), None)

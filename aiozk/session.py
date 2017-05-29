@@ -63,10 +63,9 @@ class Session(object):
         if self.state in safe_states:
             return
 
-        await self.state.wait_for(*safe_states)
+        await self.state.wait_for(*safe_states, loop=self.loop)
 
     async def start(self):
-        self.loop = asyncio.get_event_loop()
         self.loop.call_soon(self.set_heartbeat)
         self.loop.create_task(self.repair_loop())
         await self.ensure_safe_state()
@@ -77,7 +76,7 @@ class Session(object):
         retry_policy = RetryPolicy.exponential_backoff(maximum=MAX_FIND_WAIT)
 
         while not conn:
-            await retry_policy.enforce()
+            await retry_policy.enforce(loop=self.loop)
 
             servers = random.sample(self.hosts, len(self.hosts))
             for host, port in servers:
@@ -101,7 +100,7 @@ class Session(object):
             self.loop.create_task(self.find_server(allow_read_only=False))
 
     async def make_connection(self, host, port):
-        conn = Connection(host, port, watch_handler=self.event_dispatch, read_timeout=self.read_timeout)
+        conn = Connection(host, port, watch_handler=self.event_dispatch, read_timeout=self.read_timeout, loop=self.loop)
         try:
             await conn.connect()
         except Exception:
@@ -144,7 +143,7 @@ class Session(object):
         log.debug('repair loop starting')
         while not self.closing:
             log.debug('Await for repairable state')
-            await self.state.wait_for(States.SUSPENDED, States.LOST)
+            await self.state.wait_for(States.SUSPENDED, States.LOST, loop=self.loop)
             log.debug('Repair state reached')
             if self.closing:
                 break
@@ -154,7 +153,7 @@ class Session(object):
             session_was_lost = self.state == States.LOST
 
             try:
-                await asyncio.wait_for(self.establish_session(), self.timeout)
+                await asyncio.wait_for(self.establish_session(), self.timeout, loop=self.loop)
             except (exc.SessionLost, asyncio.TimeoutError) as e:
                 log.info('Session closed: {}'.format(e))
                 self.conn.abort(exc.SessionLost)
@@ -176,7 +175,7 @@ class Session(object):
     async def send(self, request):
         response = None
         while not response:
-            await self.retry_policy.enforce(request)
+            await self.retry_policy.enforce(request, loop=self.loop)
             await self.ensure_safe_state(writing=request.writes_data)
 
             try:
@@ -211,7 +210,7 @@ class Session(object):
 
         try:
             timeout = self.timeout - self.timeout/HEARTBEAT_FREQUENCY
-            zxid, _ = await asyncio.wait_for(self.conn.send(protocol.PingRequest()), timeout)
+            zxid, _ = await asyncio.wait_for(self.conn.send(protocol.PingRequest()), timeout, loop=self.loop)
             self.last_zxid = zxid
         except (exc.ConnectError, asyncio.TimeoutError):
             self.state.transition_to(States.SUSPENDED)

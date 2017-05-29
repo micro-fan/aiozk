@@ -22,7 +22,7 @@ class BaseWatcher(Recipe):
         self.callbacks[path].add(callback)
 
         if len(self.callbacks[path]) == 1:
-            asyncio.ensure_future(self.watch_loop(path))
+            asyncio.ensure_future(self.watch_loop(path), loop=self.client.loop)
 
     def remove_callback(self, path, callback):
         self.callbacks[path].discard(callback)
@@ -38,5 +38,5 @@ class BaseWatcher(Recipe):
             except exc.NoNode:
                 return
             for callback in self.callbacks[path]:
-                asyncio.ensure_future(callback(result))
+                asyncio.ensure_future(callback(result), loop=self.client.loop)
             await self.client.wait_for_event(self.watched_event, path)

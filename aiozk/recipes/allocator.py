@@ -69,7 +69,7 @@ class Allocator(Recipe):
         await self.party.join()
 
         self.data_watcher.add_callback(self.base_path, self.handle_data_change)
-        asyncio.ensure_future(self.monitor_member_changes())
+        asyncio.ensure_future(self.monitor_member_changes(), loop=self.client.loop)
 
     async def add(self, new_item):
         new_set = self.full_set.copy().add(new_item)

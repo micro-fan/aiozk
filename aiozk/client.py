@@ -26,6 +26,7 @@ class ZKClient(object):
             read_timeout=None,
             loop=None
     ):
+        self.loop = loop or asyncio.get_event_loop()
         self.chroot = None
         if chroot:
             self.chroot = self.normalize_path(chroot)
@@ -87,7 +88,7 @@ class ZKClient(object):
     def wait_for_event(self, event_type, path):
         path = self.normalize_path(path)
 
-        f = asyncio.Future()
+        f = self.loop.create_future()
 
         def set_future(_):
             if not f.done():

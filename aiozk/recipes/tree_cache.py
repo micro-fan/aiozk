@@ -109,7 +109,7 @@ class ZNodeCache(object):
                 self.path + "/" + added, self.defaults.get(added, {}),
                 self.client, self.data_watcher, self.child_watcher
             )
-            asyncio.ensure_future(self.children[added].start())
+            asyncio.ensure_future(self.children[added].start(), loop=self.client.loop.create_future())
 
     def data_callback(self, data):
         log.debug("New value for %s: %r", self.dot_path, data)
