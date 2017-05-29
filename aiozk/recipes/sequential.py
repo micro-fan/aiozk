@@ -77,7 +77,7 @@ class SequentialRecipe(Recipe):
 
         try:
             if time_limit:
-                await asyncio.wait_for(unblocked, time_limit)
+                await asyncio.wait_for(unblocked, time_limit, loop=self.client.loop.create_future())
             else:
                 await unblocked
         except asyncio.TimeoutError:

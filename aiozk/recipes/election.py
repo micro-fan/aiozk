@@ -10,7 +10,7 @@ class LeaderElection(SequentialRecipe):
         super(LeaderElection, self).__init__(base_path)
         self.has_leadership = False
 
-        self.leadership_future = asyncio.Future()
+        self.leadership_future = self.client.loop.create_future()
 
     async def join(self):
         await self.create_unique_znode("candidate")
@@ -30,7 +30,7 @@ class LeaderElection(SequentialRecipe):
             return
 
         await self.wait_on_sibling(candidates[position - 1])
-        asyncio.ensure_future(self.check_position())
+        asyncio.ensure_future(self.check_position(), loop=self.client.loop)
 
     async def wait_for_leadership(self, timeout=None):
         if self.has_leadership:
@@ -41,7 +41,7 @@ class LeaderElection(SequentialRecipe):
             time_limit = time.time() + timeout
 
         if time_limit:
-            await asyncio.wait_for(self.leadership_future, time_limit)
+            await asyncio.wait_for(self.leadership_future, time_limit, loop=self.client.loop)
         else:
             await self.leadership_future
 

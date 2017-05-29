@@ -49,7 +49,7 @@ class BaseLock(SequentialRecipe):
             return state["acquired"]
 
         async def handle_session_loss():
-            await self.client.session.state.wait_for(states.States.LOST)
+            await self.client.session.state.wait_for(states.States.LOST, loop=self.client.loop)
             if not state["acquired"]:
                 return
 
@@ -59,7 +59,7 @@ class BaseLock(SequentialRecipe):
             )
             state["acquired"] = False
 
-        asyncio.ensure_future(handle_session_loss())
+        asyncio.ensure_future(handle_session_loss(), loop=self.client.loop)
 
         async def on_exit():
             state["acquired"] = False

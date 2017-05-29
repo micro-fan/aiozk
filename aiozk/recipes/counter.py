@@ -26,11 +26,11 @@ class Counter(Recipe):
         else:
             self.numeric_type = int
 
-        self.value_sync = asyncio.Future()
+        self.value_sync = self.client.loop.create_future()
 
     async def start(self):
         self.watcher.add_callback(self.base_path, self.data_callback)
-        await asyncio.sleep(0.01)
+        await asyncio.sleep(0.01, loop=self.client.loop)
 
         await self.ensure_path()
 
@@ -41,7 +41,7 @@ class Counter(Recipe):
         self.value = self.numeric_type(new_value)
         if not self.value_sync.done():
             self.value_sync.set_result(None)
-            self.value_sync = asyncio.Future()
+            self.value_sync = self.client.loop.create_future()
 
     async def set_value(self, value, force=True):
         data = str(value)

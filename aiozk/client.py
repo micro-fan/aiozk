@@ -23,15 +23,17 @@ class ZKClient(object):
             default_acl=None,
             retry_policy=None,
             allow_read_only=False,
-            read_timeout=None
+            read_timeout=None,
+            loop=None
     ):
+        self.loop = loop or asyncio.get_event_loop()
         self.chroot = None
         if chroot:
             self.chroot = self.normalize_path(chroot)
             log.info("Using chroot '%s'", self.chroot)
 
         self.session = Session(
-            servers, session_timeout, retry_policy, allow_read_only, read_timeout
+            servers, session_timeout, retry_policy, allow_read_only, read_timeout, loop
         )
 
         self.default_acl = default_acl or [protocol.UNRESTRICTED_ACCESS]
@@ -86,7 +88,7 @@ class ZKClient(object):
     def wait_for_event(self, event_type, path):
         path = self.normalize_path(path)
 
-        f = asyncio.Future()
+        f = self.loop.create_future()
 
         def set_future(_):
             if not f.done():

@@ -44,7 +44,7 @@ class DoubleBarrier(SequentialRecipe):
 
         try:
             if time_limit:
-                await asyncio.wait_for(barrier_lifted, time_limit)
+                await asyncio.wait_for(barrier_lifted, time_limit, loop=self.client.loop)
             else:
                 await barrier_lifted
         except asyncio.TimeoutError:

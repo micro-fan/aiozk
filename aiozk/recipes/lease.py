@@ -5,7 +5,7 @@ import time
 from aiozk import exc
 
 from .sequential import SequentialRecipe
-
+from functools import partial
 
 log = logging.getLogger(__name__)
 
@@ -29,7 +29,8 @@ class Lease(SequentialRecipe):
         except exc.NodeExists:
             log.warn("Lease for %s already obtained.", self.base_path)
 
-        asyncio.call_later(time_limit, asyncio.ensure_future, self.release())
+        callback = partial(asyncio.ensure_future, self.release(), loop=self.client.loop)
+        self.client.loop.call_later(time_limit, callback)
         return True
 
     async def release(self):
