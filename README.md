@@ -56,6 +56,12 @@ To understand ideas behind recipes [please read this](https://zookeeper.apache.o
 Most of tests are integration tests and running on real zookeeper instances.
 We've chosen `zookeeper 3.5` version, since it has ability to dynamic reconfiguration and we're going to do all connecting/reconnecting/watches tests on zk docker cluster as this gives us ability to restart any server and see what happens.
 
+**NB**: please ensure that you're using recent `docker-compose` version. You can get it by running
+
+```
+pip install --user -U docker-compose
+```
+
 ```sh
 # first terminal: launch zookeeper cluster
 docker-compose rm -fv && docker-compose build zk && docker-compose scale zk=7 && docker-compose up zk_seed zk
@@ -92,7 +98,7 @@ zk_7       | ethernal loop
 Run tests:
 
 ```sh
-docker-compose run aiozk
+docker-compose run --no-deps aiozk
 # last lines will be about testing results
 
 ............lot of lines ommited........
