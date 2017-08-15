@@ -86,6 +86,7 @@ class ZNodeCache(object):
         self.child_watcher.add_callback(self.path, self.child_callback)
 
     async def stop(self):
+        await asyncio.gather(*(child.stop() for child in self.children.values()), loop=self.client.loop)
         self.data_watcher.remove_callback(self.path, self.data_callback)
         self.child_watcher.remove_callback(self.path, self.child_callback)
 
