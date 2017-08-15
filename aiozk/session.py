@@ -87,7 +87,7 @@ class Session(object):
                 break
 
             if not conn:
-                log.warn("No servers available, will keep trying.")
+                log.warning("No servers available, will keep trying.")
 
         old_conn = self.conn
         self.conn = conn
@@ -246,7 +246,7 @@ class Session(object):
             log.error("Got 'auth failed' watch event.")
             self.state.transition_to(States.LOST)
         elif event.state == protocol.WatchEvent.CONNECTED_READ_ONLY:
-            log.warn("Got 'connected read only' watch event.")
+            log.warning("Got 'connected read only' watch event.")
             self.state.transition_to(States.READ_ONLY)
         elif event.state == protocol.WatchEvent.SASL_AUTHENTICATED:
             log.info("Authentication successful.")

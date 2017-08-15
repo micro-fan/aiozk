@@ -53,7 +53,7 @@ class BaseLock(SequentialRecipe):
             if not state["acquired"]:
                 return
 
-            log.warn(
+            log.warning(
                 "Session expired at some point, lock %s no longer acquired.",
                 self
             )

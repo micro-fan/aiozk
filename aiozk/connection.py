@@ -231,7 +231,7 @@ class Connection:
         the given ``exception`` parameter is used (defaults to
         ``ConnectError``).
         """
-        log.warn("Aborting connection to %s:%s", self.host, self.port)
+        log.warning("Aborting connection to %s:%s", self.host, self.port)
 
         def abort_pending(f):
             exc_info = sys.exc_info()
@@ -265,11 +265,11 @@ class Connection:
             # await list(pending_with_timeouts)
             self.abort(exception=exc.TimeoutError)
             # wlist = list(self.drain_all_pending())
-            # log.warn('Wait for list: {} {}'.format(wlist, self.pending))
+            # log.warning('Wait for list: {} {}'.format(wlist, self.pending))
             # if len(wlist) > 0:
             #     await asyncio.wait(wlist, timeout=timeout)
         except asyncio.TimeoutError:
-            log.warn('ABORT Timeout')
+            log.warning('ABORT Timeout')
             await self.abort(exception=exc.TimeoutError)
         except Exception as e:
             log.exception('in close: {}'.format(e))

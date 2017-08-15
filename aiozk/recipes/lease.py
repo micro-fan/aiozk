@@ -27,7 +27,7 @@ class Lease(SequentialRecipe):
         try:
             await self.create_unique_znode("lease", data=str(time_limit))
         except exc.NodeExists:
-            log.warn("Lease for %s already obtained.", self.base_path)
+            log.warning("Lease for %s already obtained.", self.base_path)
 
         callback = partial(asyncio.ensure_future, self.release(), loop=self.client.loop)
         self.client.loop.call_later(time_limit, callback)
