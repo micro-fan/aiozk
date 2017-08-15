@@ -17,15 +17,19 @@ class BaseWatcher(Recipe):
     def __init__(self, *args, **kwargs):
         super(BaseWatcher, self).__init__(*args, **kwargs)
         self.callbacks = collections.defaultdict(set)
+        self.loops = dict()
 
     def add_callback(self, path, callback):
         self.callbacks[path].add(callback)
 
-        if len(self.callbacks[path]) == 1:
-            asyncio.ensure_future(self.watch_loop(path), loop=self.client.loop)
+        if not path in self.loops:
+            self.loops[path] = asyncio.ensure_future(self.watch_loop(path), loop=self.client.loop)
 
     def remove_callback(self, path, callback):
         self.callbacks[path].discard(callback)
+
+        if not self.callbacks[path]:
+            self.loops.pop(path).cancel()
 
     async def fetch(self, path):
         raise NotImplementedError
