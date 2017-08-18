@@ -2,7 +2,7 @@ import asyncio
 import uuid
 
 from .base import ZKBase
-from ..exc import NoNode
+
 
 class TestTreeCache(ZKBase):
     async def setUp(self):
