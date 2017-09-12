@@ -1,69 +1,83 @@
 import asyncio
 import uuid
 
-from .base import ZKBase
+import pytest
 
 
-class TestTreeCache(ZKBase):
-    async def setUp(self):
-        await super().setUp()
-        for attrname in ['basenode', 'node1', 'node2', 'subnode1', 'subnode2', 'subnode3']:
-            setattr(self, attrname, uuid.uuid4().hex)
-        for attrname in ['data1', 'data2', 'data3']:
-            setattr(self, attrname, uuid.uuid4().hex.encode())
-        
-        self.basepath = '/{}'.format(self.basenode)
-        self.path1 = '{}/{}'.format(self.basepath, self.node1)
-        self.path2 = '{}/{}'.format(self.basepath, self.node2)
-        self.subpath1 = '{}/{}'.format(self.path2, self.subnode1)
-        self.subpath2 = '{}/{}'.format(self.path2, self.subnode2)
-        self.subpath3 = '{}/{}'.format(self.subpath1, self.subnode3)
+class Tree:
+    def __init__(self, zk, path):
+        self.zk = zk
+        self.path = path
 
-        await self.c.create(self.basepath)
-        await self.c.create(self.path1, self.data1)
-        await self.c.create(self.path2)
-        await self.c.create(self.subpath1, self.data2)
-        await self.c.create(self.subpath2)
-        await self.c.create(self.subpath3, self.data3)
+    async def init(self):
+        self.data = {}
+        await self.zk.create(self.path)
+        for name in ['node1', 'node2']:
+            await self.zk.create(f'{self.path}/{name}')
+            self.data[name] = {}
+            for subname in ['subnode1', 'subnode2']:
+                s = uuid.uuid4().hex.encode()
+                await self.zk.create(f'{self.path}/{name}/{subname}', s)
+                self.data[name][subname] = s
 
-    async def tearDown(self):
-        await self.c.deleteall(self.basepath)
-        await super().tearDown()
+    async def modify(self):
+        s = uuid.uuid4().hex
+        new_node = f'{self.path}/{s}'
+        await self.zk.create(new_node, s)
+        self.data[s] = s.encode()
 
-    async def test_cache(self):
-        cache = self.c.recipes.TreeCache(self.basenode)
-        cache.set_client(self.c)
-        await cache.start()
+        sn1 = f'{self.path}/node1/subnode1'
+        self.data['node1']['subnode1'] = s.encode()
+        await self.zk.set_data(sn1, s)
 
-        expected = {
-            self.node1: self.data1,
-            self.node2: {
-                self.subnode1: {
-                    self.subnode3: self.data3
-                },
-                self.subnode2: None
-            }
-        }
-
-        self.assertDictEqual(cache.as_dict(), expected)
-        # we can't see this one in the dict:
-        assert getattr(getattr(cache.root, self.node2), self.subnode1).value == self.data2
-
-        newnode = uuid.uuid4().hex
-        newdata = [uuid.uuid4().hex.encode() for i in range(3)]
-
-        await self.c.create('{}/{}'.format(self.basepath, newnode), newdata[0]) # add node
-        await self.c.set_data(self.path1, newdata[1]) # change data
-        await self.c.set_data(self.subpath2, newdata[2]) # set data
-        await self.c.delete(self.subpath3) # delete node
-
+        await self.zk.delete(f'{self.path}/node1/subnode2')
+        del self.data['node1']['subnode2']
         await asyncio.sleep(0.1)
 
-        expected[newnode] = newdata[0]
-        expected[self.node1] = newdata[1]
-        expected[self.node2][self.subnode2] = newdata[2]
-        expected[self.node2][self.subnode1] = self.data2 # this one is now exposed
 
-        self.assertDictEqual(cache.as_dict(), expected)
+@pytest.fixture
+async def tree(zk, path):
+    out = Tree(zk, path)
+    await out.init()
+    yield out
+    await zk.deleteall(path)
 
-        await cache.stop()
+
+@pytest.fixture
+async def tree_cache(zk, path):
+    cache = zk.recipes.TreeCache(path)
+    cache.set_client(zk)
+    await cache.start()
+    yield cache
+    await cache.stop()
+
+
+@pytest.mark.asyncio
+async def test_tree_cache(zk, tree, tree_cache, path):
+    assert tree_cache.as_dict() == tree.data
+
+    td = b'test_data'
+    await zk.set_data(f'{path}/node1', td)
+    await asyncio.sleep(0.1)
+    assert getattr(tree_cache.root, 'node1').value == td
+
+    await tree.modify()
+    assert tree_cache.as_dict() == tree.data
+
+
+@pytest.mark.asyncio
+async def test_stop_cachecrash(zk, path):
+    cache = zk.recipes.TreeCache(path)
+    cache.set_client(zk)
+    await cache.start()
+    await cache.stop()
+    await zk.delete(path)
+
+
+@pytest.mark.asyncio
+async def test_cachecrash_after_delete(zk, path):
+    cache = zk.recipes.TreeCache(path)
+    cache.set_client(zk)
+    await cache.start()
+    await zk.delete(path)
+    await cache.stop()

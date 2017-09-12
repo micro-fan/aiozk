@@ -1,51 +1,46 @@
 import asyncio
-import uuid
 
-from .base import ZKBase
+import pytest
 
 
-class TestBarrier(ZKBase):
-    async def worker(self):
-        barrier = self.c.recipes.Barrier(self.path)
-        self.waiting.set_result('ok')
+@pytest.mark.asyncio
+async def test_barrier(zk, path):
+    is_lifted = False
+    is_worker_started = asyncio.Future()
+
+    async def start_worker():
+        barrier = zk.recipes.Barrier(path)
+        is_worker_started.set_result('ok')
         await barrier.wait()
-        self.assertEqual(self.lifted, True)
+        assert is_lifted == True
 
-    async def test_barrier(self):
-        self.path = '/{}'.format(uuid.uuid4().hex)
-        self.waiting = asyncio.Future()
-        self.lifted = False
-        barrier = self.c.recipes.Barrier(self.path)
-        await barrier.create()
-        worker = asyncio.ensure_future(self.worker())
+    barrier = zk.recipes.Barrier(path)
+    await barrier.create()
 
-        r = await self.waiting
-        self.assertEqual(r, 'ok')
+    worker = asyncio.ensure_future(start_worker())
+    is_ok = await is_worker_started
+    assert is_ok == 'ok'
 
-        self.lifted = True
-        await barrier.lift()
-        await worker
+    is_lifted = True
+    await barrier.lift()
+    await worker
 
 
-class TestDoubleBarrier(ZKBase):
-    async def worker(self, min_workers):
-        barrier = self.c.recipes.DoubleBarrier(self.path, min_workers)
+@pytest.mark.asyncio
+async def test_double_barrier(zk, path):
+    num_workers = 0
+    workers = []
+
+    async def start_worker(min_workers):
+        barrier = zk.recipes.DoubleBarrier(path, min_workers)
         await barrier.enter()
         for i in range(5):
-            self.assertGreaterEqual(self.num_workers, min_workers)
+            assert num_workers >= min_workers
         await barrier.leave()
 
-    async def test_barrier(self):
-        self.path = '/{}'.format(uuid.uuid4().hex)
-        self.lifted = False
-        self.num_workers = 0
-        workers = []
-        target = 8
-        for _ in range(target):
-            self.num_workers += 1
-            workers.append(asyncio.ensure_future(self.worker(target)))
-        await asyncio.wait(workers)
-
-    async def tearDown(self):
-        await self.c.delete(self.path)
-        await super().tearDown()
+    target = 8
+    for _ in range(target):
+        num_workers += 1
+        workers.append(asyncio.ensure_future(start_worker(target)))
+    await asyncio.wait(workers)
+    await zk.delete(path)

@@ -23,6 +23,10 @@ services:
 
   aiozk:
     build: .
-    command: /bin/bash -c 'python3 setup.py install && nose2'
+    command: /bin/bash -c 'python3 setup.py install && pytest'
+    environment:
+      - PYTHONPATH=.
+    volumes:
+      - .:/code
     depends_on:
       - zk

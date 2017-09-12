@@ -23,7 +23,7 @@ setup(
     tests_require=[
         'coverage',
         'flake8',
-        'nose2',
+        'pytest',
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',

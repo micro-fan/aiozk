@@ -4,6 +4,8 @@ import logging
 from .children_watcher import ChildrenWatcher
 from .data_watcher import DataWatcher
 from .recipe import Recipe
+from ..exc import NoNode
+
 
 
 log = logging.getLogger(__name__)
@@ -86,11 +88,14 @@ class ZNodeCache(object):
         self.child_watcher.add_callback(self.path, self.child_callback)
 
     async def stop(self):
+        await asyncio.sleep(0.02)
         await asyncio.gather(*(child.stop() for child in self.children.values()), loop=self.client.loop)
         self.data_watcher.remove_callback(self.path, self.data_callback)
         self.child_watcher.remove_callback(self.path, self.child_callback)
 
     async def child_callback(self, new_children):
+        if new_children == NoNode:
+            return
         removed_children = set(self.children.keys()) - set(new_children)
         added_children = set(new_children) - set(self.children.keys())
 
@@ -109,6 +114,8 @@ class ZNodeCache(object):
 
     async def data_callback(self, data):
         log.debug("New value for %s: %r", self.dot_path, data)
+        if data == NoNode:
+            return
         self.data = data
 
     def as_dict(self):
@@ -117,5 +124,4 @@ class ZNodeCache(object):
                 child_path: child_znode.as_dict()
                 for child_path, child_znode in self.children.items()
             }
-
         return self.data

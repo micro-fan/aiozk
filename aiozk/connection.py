@@ -97,7 +97,7 @@ class Connection:
         return zxid, response
 
     def start_read_loop(self):
-        self.loop.create_task(self.read_loop())
+        self._read_loop = self.loop.create_task(self.read_loop())
         # ioloop.IOLoop.current().add_callback(self.read_loop)
 
     def send(self, request, xid=None):
@@ -151,7 +151,7 @@ class Connection:
         while not self.closing:
             try:
                 xid, zxid, response = await self.read_response()
-            except ConnectionAbortedError:
+            except (ConnectionAbortedError, asyncio.CancelledError):
                 return
             except Exception as e:
                 log.exception("Error reading response.")
@@ -170,7 +170,7 @@ class Connection:
 
             if isinstance(response, Exception):
                 f.set_exception(response)
-            else:
+            elif not f.cancelled():
                 f.set_result((zxid, response))
 
     async def _read(self, size=-1):
@@ -278,3 +278,4 @@ class Connection:
             log.debug('Closing writer')
             self.writer.close()
             log.debug('Writer closed')
+        self._read_loop.cancel()

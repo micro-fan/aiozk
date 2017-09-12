@@ -1,24 +1,38 @@
+import asyncio
+import logging
 import uuid
+import pytest
 
-from .base import ZKBase
+from aiozk import WatchEvent
 
 
-class TestClient(ZKBase):
-    async def setUp(self):
-        await super().setUp()
-        self.path = '/{}'.format(uuid.uuid4().hex)
-        self.child_1 = '{}/{}'.format(self.path, uuid.uuid4().hex)
-        self.child_2 = '{}/{}'.format(self.path, uuid.uuid4().hex)
-        await self.c.create(self.path)
-        await self.c.create(self.child_1)
-        await self.c.create(self.child_2)
+logging.getLogger('asyncio').setLevel(logging.DEBUG)
 
-    async def tearDown(self):
-        await self.c.delete(self.child_1)
-        await self.c.delete(self.child_2)
-        await self.c.delete(self.path)
-        await super().tearDown()
 
-    async def test_children(self):
-        c = await self.c.get_children(self.path)
-        assert len(c) == 2, c
+@pytest.fixture
+async def full_zk(zk, path):
+    child_1 = f'{path}/{uuid.uuid4().hex}'
+    child_2 = f'{path}/{uuid.uuid4().hex}'
+    await zk.create(path)
+    await zk.create(child_1)
+    await zk.create(child_2)
+    yield zk
+    await zk.delete(child_2)
+    await zk.delete(child_1)
+    await zk.delete(path)
+
+
+@pytest.mark.asyncio
+async def test_children(full_zk, path):
+    resp = await full_zk.get_children(path)
+    assert len(resp) == 2
+
+
+@pytest.mark.asyncio
+async def test_cancel_crash(zk, path):
+    async def wait_loop():
+        while 1:
+            await zk.wait_for_event(WatchEvent.DATA_CHANGED, path)
+
+    f = asyncio.ensure_future(wait_loop())
+    f.cancel()

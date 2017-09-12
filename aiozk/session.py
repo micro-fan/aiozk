@@ -184,8 +184,10 @@ class Session(object):
                 self.last_zxid = zxid
                 self.set_heartbeat()
                 self.retry_policy.clear(request)
-            except (exc.NodeExists, exc.NoNode):
+            except (exc.NodeExists, exc.NoNode, exc.NotEmpty):
                 raise
+            except asyncio.CancelledError:
+                pass
             except exc.ConnectError:
                 self.state.transition_to(States.SUSPENDED)
             except Exception as e:
