@@ -25,8 +25,8 @@ class DoubleBarrier(SequentialRecipe):
         if timeout is not None:
             time_limit = time.time() + timeout
 
-        barrier_lifted = self.client.wait_for_event(
-            WatchEvent.CREATED, self.sentinel_path
+        barrier_lifted = self.client.wait_for_events(
+            [WatchEvent.CREATED], self.sentinel_path
         )
 
         exists = await self.client.exists(path=self.sentinel_path, watch=True)

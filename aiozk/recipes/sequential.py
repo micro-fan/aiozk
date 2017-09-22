@@ -69,7 +69,7 @@ class SequentialRecipe(Recipe):
 
         path = self.sibling_path(sibling)
 
-        unblocked = self.client.wait_for_event(WatchEvent.DELETED, path)
+        unblocked = self.client.wait_for_events([WatchEvent.DELETED], path)
 
         exists = await self.client.exists(path=path, watch=True)
         if not exists:

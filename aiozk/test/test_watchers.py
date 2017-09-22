@@ -35,6 +35,33 @@ async def test_data_watch(zk, path, data_watcher):
 
 
 @pytest.mark.asyncio
+async def test_data_watch_delete(zk, path, data_watcher):
+    data = []
+    ready = asyncio.Event()
+    test_data = b'test'
+
+    async def data_callback(d):
+        data.append(d)
+        ready.set()
+
+    await zk.set_data(path, test_data)
+
+    data_watcher.add_callback(path, data_callback)
+    await asyncio.sleep(0.2)
+    assert data == [test_data]
+    ready.clear()
+    await zk.delete(path)
+
+    await asyncio.wait_for(ready.wait(), timeout=1)
+    assert ready.is_set()
+    assert data == [test_data, NoNode]
+    data_watcher.remove_callback(path, data_callback)
+
+    await zk.create(path)
+
+
+
+@pytest.mark.asyncio
 async def test_data_watch_no_node(zk, path, data_watcher):
     random_path = path + uuid.uuid4().hex
     is_finished = asyncio.Future()

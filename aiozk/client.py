@@ -85,7 +85,7 @@ class ZKClient(object):
     async def close(self):
         await self.session.close()
 
-    def wait_for_event(self, event_type, path):
+    def wait_for_events(self, event_types, path):
         path = self.normalize_path(path)
 
         f = self.loop.create_future()
@@ -93,9 +93,11 @@ class ZKClient(object):
         def set_future(_):
             if not f.done():
                 f.set_result(None)
-            self.session.remove_watch_callback(event_type, path, set_future)
+            for event_type in event_types:
+                self.session.remove_watch_callback(event_type, path, set_future)
 
-        self.session.add_watch_callback(event_type, path, set_future)
+        for event_type in event_types:
+            self.session.add_watch_callback(event_type, path, set_future)
 
         return f
 

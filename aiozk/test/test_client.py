@@ -32,7 +32,7 @@ async def test_children(full_zk, path):
 async def test_cancel_crash(zk, path):
     async def wait_loop():
         while 1:
-            await zk.wait_for_event(WatchEvent.DATA_CHANGED, path)
+            await zk.wait_for_events([WatchEvent.DATA_CHANGED], path)
 
     f = asyncio.ensure_future(wait_loop())
     f.cancel()

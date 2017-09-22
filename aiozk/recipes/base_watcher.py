@@ -18,7 +18,7 @@ def maybe_future(fut, loop):
 
 class BaseWatcher(Recipe):
 
-    watched_event = None
+    watched_events = []
 
     def __init__(self, *args, **kwargs):
         super(BaseWatcher, self).__init__(*args, **kwargs)
@@ -52,7 +52,7 @@ class BaseWatcher(Recipe):
             for callback in self.callbacks[path]:
                 maybe_future(callback(result), loop=self.client.loop)
             try:
-                await self.client.wait_for_event(self.watched_event, path)
+                await self.client.wait_for_events(self.watched_events, path)
             except asyncio.CancelledError:
                 pass
             except Exception as e:

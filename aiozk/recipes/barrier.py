@@ -27,8 +27,8 @@ class Barrier(Recipe):
         if timeout is not None:
             time_limit = time.time() + timeout
 
-        barrier_lifted = self.client.wait_for_event(
-            WatchEvent.DELETED, self.path
+        barrier_lifted = self.client.wait_for_events(
+            [WatchEvent.DELETED], self.path
         )
 
         exists = await self.client.exists(path=self.path, watch=True)

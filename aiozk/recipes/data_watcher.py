@@ -5,7 +5,7 @@ from .base_watcher import BaseWatcher
 
 class DataWatcher(BaseWatcher):
 
-    watched_event = WatchEvent.DATA_CHANGED
+    watched_events = [WatchEvent.DATA_CHANGED, WatchEvent.DELETED]
 
     async def fetch(self, path):
         data = await self.client.get_data(path=path, watch=True)
