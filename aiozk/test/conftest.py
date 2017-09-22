@@ -1,9 +1,10 @@
+import asyncio
 import os
 import uuid
 
-import pytest
-
 from aiozk import ZKClient, exc  # noqa
+from aiozk.states import States
+import pytest
 
 
 HOST = os.environ.get('ZK_HOST', 'zk')
@@ -64,3 +65,19 @@ async def zk2(zk):
     await c.start()
     yield c
     await c.close()
+
+
+@pytest.fixture
+def zk_disruptor(zk):
+    """
+    Force zk reconnect
+    """
+    async def _force_reconnect():
+        conn = zk.session.conn
+        await asyncio.sleep(0.2)
+        await zk.session.ensure_safe_state()
+        await conn.close(1)
+        lost = [States.SUSPENDED, States.LOST]
+        await zk.session.state.wait_for(*lost)
+        await zk.session.ensure_safe_state()
+    yield _force_reconnect

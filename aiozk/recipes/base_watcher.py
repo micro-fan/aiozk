@@ -40,10 +40,6 @@ class BaseWatcher(Recipe):
     async def fetch(self, path):
         raise NotImplementedError
 
-    def cancel(self):
-        for loop in self.loops.values():
-            loop.cancel()
-
     async def watch_loop(self, path):
         while self.callbacks[path]:
             log.debug("Fetching data for %s", path)
@@ -55,4 +51,10 @@ class BaseWatcher(Recipe):
                 return
             for callback in self.callbacks[path]:
                 maybe_future(callback(result), loop=self.client.loop)
-            await self.client.wait_for_event(self.watched_event, path)
+            try:
+                await self.client.wait_for_event(self.watched_event, path)
+            except asyncio.CancelledError:
+                pass
+            except Exception as e:
+                print('EXC is: {!r}'.format(e))
+                raise

@@ -12,6 +12,7 @@ services:
     image: tipsi_zookeeper:latest
     environment:
       - ZK_SEED=zk_seed
+    #  - ZOO_LOG4J_PROP=DEBUG,ROLLINGFILE
 
   diag:
     build: .

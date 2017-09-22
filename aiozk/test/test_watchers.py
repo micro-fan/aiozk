@@ -12,7 +12,6 @@ async def data_watcher(zk, path):
     watcher = zk.recipes.DataWatcher()
     watcher.set_client(zk)
     yield watcher
-    watcher.cancel()
     await zk.delete(path)
 
 
@@ -32,7 +31,7 @@ async def test_data_watch(zk, path, data_watcher):
     await asyncio.wait_for(ready.wait(), timeout=0.1)
     assert ready.is_set()
     assert data == [test_data]
-    asyncio.Future()
+    data_watcher.remove_callback(path, data_callback)
 
 
 @pytest.mark.asyncio
@@ -65,8 +64,6 @@ async def child_watcher(zk, path, child1, child2):
     watcher.set_client(zk)
     yield watcher
 
-    watcher.cancel()
-
     try:
         await zk.delete(child1)
         await zk.delete(child2)
@@ -95,6 +92,7 @@ async def test_child_watch(child_watcher, path, zk, child1, child2):
     await asyncio.wait([ready.wait()], timeout=0.1)
     assert ready.is_set()
     assert children == {child.split('/')[-1] for child in (child1, child2)}
+    child_watcher.remove_callback(path, children_callback)
 
 
 @pytest.mark.asyncio
@@ -108,3 +106,28 @@ async def test_child_watch_no_node(child_watcher, path):
 
     child_watcher.add_callback(random_path, stub_callback)
     await asyncio.wait_for(is_finished, 0.1)
+
+
+@pytest.mark.asyncio
+async def test_reconnect_watcher(data_watcher, path, zk_disruptor, zk, zk2):
+    test_data = uuid.uuid4().hex.encode()
+    ready = asyncio.Future()
+
+    async def data_callback(d):
+        print(f'Data callback get: {d}')
+        if d == NoNode:
+            return
+        if d and not ready.done():
+            print(f'Set result: {d} {ready}')
+            ready.set_result(d)
+
+    data_watcher.add_callback(path, data_callback)
+    await zk_disruptor()
+    await zk2.set_data(path, test_data)
+    resp = await zk2.get_data(path)
+    assert resp == test_data
+
+    data = await asyncio.wait_for(ready, 1)
+    assert data == test_data
+
+    data_watcher.remove_callback(path, data_callback)

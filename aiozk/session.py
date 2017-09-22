@@ -109,7 +109,7 @@ class Session(object):
         return conn
 
     async def establish_session(self):
-        log.info("Establishing session.")
+        log.info("Establishing session. {!r}".format(self.session_id))
         connection_response = await self.conn.send_connect(
             protocol.ConnectRequest(
                 protocol_version=0,
@@ -168,9 +168,7 @@ class Session(object):
                 self.state.transition_to(States.CONNECTED)
 
             self.conn.start_read_loop()
-
-            if session_was_lost:
-                await self.set_existing_watches()
+            await self.set_existing_watches()
 
     async def send(self, request):
         response = None
