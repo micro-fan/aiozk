@@ -50,6 +50,7 @@ class Connection:
         self.watches = collections.defaultdict(list)
 
         self.read_timeout = read_timeout or DEFAULT_READ_TIMEOUT
+        self._read_loop = None
 
     async def connect(self):
         log.debug("Initial connection to server %s:%d", self.host, self.port)
@@ -278,4 +279,5 @@ class Connection:
             log.debug('Closing writer')
             self.writer.close()
             log.debug('Writer closed')
-        self._read_loop.cancel()
+        if self._read_loop and not self._read_loop.done():
+            self._read_loop.cancel()
