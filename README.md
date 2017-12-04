@@ -36,7 +36,7 @@ loop.run_until_complete(run())
 
 ## Recipes
 
-You may use recipes, similar to zoonado, kazoo and other libs:
+You may use recipes, similar to zoonado, kazoo, and other libs:
 
 ```python
 # assuming zk is aiozk.ZKClient
@@ -49,12 +49,12 @@ await barrier.wait()
 
 [Full list of recipes](https://github.com/tipsi/aiozk/tree/master/aiozk/recipes)
 
-To understand ideas behind recipes [please read this](https://zookeeper.apache.org/doc/trunk/recipes.html) and [even more recipes here](http://curator.apache.org/curator-recipes/index.html). Make sure you're familiar with all recipes before do something new by youself, exceptionally when it involves more than few basic zookeeper calls.
+To understand ideas behind recipes [please read this](https://zookeeper.apache.org/doc/trunk/recipes.html) and [even more recipes here](http://curator.apache.org/curator-recipes/index.html). Make sure you're familiar with all recipes before doing something new by yourself, especially when it involves more than few zookeeper calls.
 
 ## Testing approach
 
 Most of tests are integration tests and running on real zookeeper instances.
-We've chosen `zookeeper 3.5` version, since it has ability to dynamic reconfiguration and we're going to do all connecting/reconnecting/watches tests on zk docker cluster as this gives us ability to restart any server and see what happens.
+We've chosen `zookeeper 3.5` version since it has an ability to dynamic reconfiguration and we're going to do all connecting/reconnecting/watches tests on zk docker cluster as this gives us the ability to restart any server and see what happens.
 
 **NB**: please ensure that you're using recent `docker-compose` version. You can get it by running
 
@@ -109,3 +109,10 @@ Ran 3 tests in 1.059s
 OK
 
 ```
+
+### Recipes testing
+
+It seems that usually recipes require several things to be tested:
+
+* That recipe flow is working as expected
+* Timeouts: reproduce every timeout with meaningful values (timeout 0.5s and block for 0.6s)
