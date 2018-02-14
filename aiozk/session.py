@@ -2,6 +2,7 @@ import asyncio
 import collections
 import logging
 import random
+import re
 
 # from tornado import gen, ioloop
 
@@ -27,8 +28,11 @@ class Session(object):
         self.loop = loop or asyncio.get_event_loop()
         self.hosts = []
         for server in servers.split(","):
-            if ":" in server:
-                host, port = server.split(":")
+            ipv6_match = re.match(r'\[(.*)\]:(\d+)$', server)
+            if ipv6_match is not None:
+                host, port = ipv6_match.groups()
+            elif ":" in server:
+                host, port = server.rsplit(":", 1)
             else:
                 host = server
                 port = DEFAULT_ZOOKEEPER_PORT
