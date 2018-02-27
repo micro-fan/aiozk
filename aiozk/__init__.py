@@ -1,6 +1,5 @@
-version_info = (0, 5, 3)
-
-__version__ = ".".join((str(point) for point in version_info))
+__version__ = '0.6.0'
+version_info = __version__.split('.')
 
 from .client import ZKClient  # noqa
 from .protocol import WatchEvent  # noqa
