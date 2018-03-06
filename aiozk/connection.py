@@ -260,10 +260,8 @@ class Connection:
             return
         self.closing = True
         if self.read_loop_task:
-            try:
-                await asyncio.wait_for(self.read_loop_task, 0.1, loop=self.loop)
-            except asyncio.TimeoutError:
-                pass
+            self.read_loop_task.cancel()
+            await self.read_loop_task
         if self.pending or (self.pending_specials and self.pending_specials != {None: []}):
             log.warning('Pendings: {}; specials:  {}'.format(self.pending, self.pending_specials))
 
