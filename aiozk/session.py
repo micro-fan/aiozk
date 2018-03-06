@@ -147,7 +147,7 @@ class Session(object):
 
     async def repair_loop(self):
         log.debug('repair loop starting')
-        while True:
+        while not self.closing:
             log.debug('Await for repairable state')
             await self.state.wait_for(States.SUSPENDED, States.LOST, loop=self.loop)
             log.debug('Repair state reached')

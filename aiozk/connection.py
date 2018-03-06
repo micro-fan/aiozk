@@ -149,7 +149,7 @@ class Connection:
         This is never used directly and is fired as a separate callback on the
         I/O loop via the `connect()` method.
         """
-        while True:
+        while not self.closing:
             try:
                 xid, zxid, response = await self.read_response()
             except (ConnectionAbortedError, asyncio.CancelledError):
