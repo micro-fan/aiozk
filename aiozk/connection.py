@@ -50,7 +50,7 @@ class Connection:
         self.watches = collections.defaultdict(list)
 
         self.read_timeout = read_timeout or DEFAULT_READ_TIMEOUT
-        self._read_loop = None
+        self.read_loop_task = None
 
     async def connect(self):
         log.debug("Initial connection to server %s:%d", self.host, self.port)
@@ -98,7 +98,7 @@ class Connection:
         return zxid, response
 
     def start_read_loop(self):
-        self._read_loop = self.loop.create_task(self.read_loop())
+        self.read_loop_task = self.loop.create_task(self.read_loop())
         # ioloop.IOLoop.current().add_callback(self.read_loop)
 
     def send(self, request, xid=None):
@@ -258,9 +258,12 @@ class Connection:
     async def close(self, timeout):
         if self.closing:
             return
+        self.closing = True
+        if self.read_loop_task:
+            self.read_loop_task.cancel()
+            await self.read_loop_task
         if self.pending or (self.pending_specials and self.pending_specials != {None: []}):
             log.warning('Pendings: {}; specials:  {}'.format(self.pending, self.pending_specials))
-        self.closing = True
 
         try:
             # await list(pending_with_timeouts)
@@ -279,5 +282,3 @@ class Connection:
             log.debug('Closing writer')
             self.writer.close()
             log.debug('Writer closed')
-        if self._read_loop and not self._read_loop.done():
-            self._read_loop.cancel()

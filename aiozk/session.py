@@ -53,6 +53,8 @@ class Session(object):
         self.password = b'\x00'
         self.read_timeout = read_timeout
 
+        self.repair_loop_task = None
+
         self.heartbeat_handle = None
 
         self.watch_callbacks = collections.defaultdict(set)
@@ -71,7 +73,7 @@ class Session(object):
 
     async def start(self):
         self.loop.call_soon(self.set_heartbeat)
-        self.loop.create_task(self.repair_loop())
+        self.repair_loop_task = self.loop.create_task(self.repair_loop())
         await self.ensure_safe_state()
 
     async def find_server(self, allow_read_only):
@@ -280,7 +282,11 @@ class Session(object):
         await self.send(request)
 
     async def close(self):
+        if self.closing:
+            return
         self.closing = True
+        if self.repair_loop_task:
+            self.repair_loop_task.cancel()
         await self.send(protocol.CloseRequest())
         self.state.transition_to(States.LOST)
         await self.conn.close(self.timeout)

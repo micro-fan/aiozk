@@ -1,11 +1,14 @@
+import io
+import re
 from setuptools import setup, find_packages
 
-from aiozk import __version__
+with io.open('aiozk/__init__.py', encoding='utf-8') as f:
+    version = re.search(r"__version__ = '(.+)'", f.read()).group(1)
 
 
 setup(
     name='aiozk',
-    version=__version__,
+    version=version,
     description='Asyncio client for Zookeeper.',
     author='Kirill Pinchuk',
     author_email='cybergrind@gmail.com',
@@ -14,12 +17,11 @@ setup(
     url='http://github.com/tipsi/aiozk',
     license='MIT',
     keywords=['zookeeper', 'asyncio', 'async'],
-    packages=find_packages(exclude=['tests', 'tests.*', 'docker', 'TAGS', '.projectile', '*.log']),
-    install_requires=[
-        'tipsi_tools>=0.9.0',
-    ],
-    entry_points={
-    },
+    packages=find_packages(
+        exclude=[
+            'tests', 'tests.*', 'docker', 'TAGS', '.projectile', '*.log',
+        ],
+    ),
     tests_require=[
         'coverage',
         'flake8',
