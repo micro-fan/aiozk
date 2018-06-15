@@ -38,7 +38,7 @@ class BaseLock(SequentialRecipe):
             if not blockers:
                 break
 
-            await self.wait_on_sibling(blockers[-1], time_limit)
+            await self.wait_on_sibling(blockers[-1], timeout)
 
         return self.make_contextmanager(znode_label)
 
