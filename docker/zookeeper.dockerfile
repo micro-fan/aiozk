@@ -8,7 +8,7 @@ RUN apt update && apt install -y \
         python3-dev \
         python3-pip
 
-ENV ZOOKEEPER_VERSION 3.5.2-alpha
+ENV ZOOKEEPER_VERSION 3.5.4-beta
 RUN curl -sS http://apache.mirrors.pair.com/zookeeper/zookeeper-${ZOOKEEPER_VERSION}/zookeeper-${ZOOKEEPER_VERSION}.tar.gz | tar -xzf - -C /opt \
   && mv /opt/zookeeper-* /opt/zookeeper \
   && chown -R root:root /opt/zookeeper
