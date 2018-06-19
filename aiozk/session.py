@@ -287,6 +287,9 @@ class Session(object):
         self.closing = True
         if self.repair_loop_task:
             self.repair_loop_task.cancel()
-        await self.send(protocol.CloseRequest())
-        self.state.transition_to(States.LOST)
-        await self.conn.close(self.timeout)
+            await asyncio.wait_for(self.send(protocol.CloseRequest()), self.timeout,
+                                   loop=self.loop)
+        if self.state.current_state != States.LOST:
+            self.state.transition_to(States.LOST)
+        if self.conn:
+            await self.conn.close(self.timeout)

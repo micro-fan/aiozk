@@ -4,6 +4,7 @@ import uuid
 import pytest
 
 from aiozk import WatchEvent
+from .conftest import get_client
 
 
 logging.getLogger('asyncio').setLevel(logging.DEBUG)
@@ -36,3 +37,9 @@ async def test_cancel_crash(zk, path):
 
     f = asyncio.ensure_future(wait_loop())
     f.cancel()
+
+
+@pytest.mark.asyncio
+async def test_closed_close():
+    zk = get_client()
+    await asyncio.wait_for(zk.session.close(), 2)
