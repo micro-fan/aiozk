@@ -289,6 +289,9 @@ class Session(object):
         await self.send(request)
 
     async def close(self):
+        if not self.started:
+            log.debug('Do nothing because session is not started')
+            return
         if self.closing:
             return
         self.closing = True
