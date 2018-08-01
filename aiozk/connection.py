@@ -188,8 +188,8 @@ class Connection:
         while remaining_size and (time() < end_time):
             remaining_time = end_time - time()
             done, pending = await asyncio.wait([self.reader.read(remaining_size)],
-                                               timeout=remaining_time,
-                                               loop=self.loop)
+                                                timeout=remaining_time,
+                                                loop=self.loop)
             if done:
                 chunk = done.pop().result()
                 payload.append(chunk)
@@ -201,8 +201,9 @@ class Connection:
         return b''.join(payload)
 
     async def read_response(self, initial_connect=False):
-        raw_size = await self._read(size_struct.size)
-        if raw_size == b'':
+        try:
+            raw_size = await self.reader.readexactly(size_struct.size)
+        except asyncio.IncompleteReadError:
             raise ConnectionAbortedError
         size = size_struct.unpack(raw_size)[0]
 
