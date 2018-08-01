@@ -3,7 +3,6 @@ from unittest import mock
 
 import aiozk
 
-import asynctest
 import pytest
 
 
