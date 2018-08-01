@@ -52,11 +52,7 @@ class Connection:
         self.read_timeout = read_timeout or DEFAULT_READ_TIMEOUT
         self.read_loop_task = None
 
-    async def connect(self):
-        log.debug("Initial connection to server %s:%d", self.host, self.port)
-        self.reader, self.writer = await asyncio.open_connection(self.host, self.port,
-                                                                 loop=self.loop)
-
+    async def _make_handshake(self):
         self.host_ip = self.writer.transport.get_extra_info('peername')[0]
 
         log.debug("Sending 'srvr' command to %s:%d", self.host, self.port)
@@ -75,7 +71,18 @@ class Connection:
         log.debug("Read-only mode: %s", self.start_read_only)
 
         log.debug("Actual connection to server %s:%d", self.host, self.port)
-        self.writer.close()
+
+
+    async def connect(self):
+        log.debug("Initial connection to server %s:%d", self.host, self.port)
+        self.reader, self.writer = await asyncio.open_connection(self.host, self.port,
+                                                                 loop=self.loop)
+
+        try:
+            await self._make_handshake()
+        finally:
+            self.writer.close()
+
         self.reader, self.writer = await asyncio.open_connection(self.host, self.port,
                                                                  loop=self.loop)
 
@@ -181,8 +188,8 @@ class Connection:
         while remaining_size and (time() < end_time):
             remaining_time = end_time - time()
             done, pending = await asyncio.wait([self.reader.read(remaining_size)],
-                                               timeout=remaining_time,
-                                               loop=self.loop)
+                                                timeout=remaining_time,
+                                                loop=self.loop)
             if done:
                 chunk = done.pop().result()
                 payload.append(chunk)
@@ -194,8 +201,9 @@ class Connection:
         return b''.join(payload)
 
     async def read_response(self, initial_connect=False):
-        raw_size = await self.reader.read(size_struct.size)
-        if raw_size == b'':
+        try:
+            raw_size = await self.reader.readexactly(size_struct.size)
+        except asyncio.IncompleteReadError:
             raise ConnectionAbortedError
         size = size_struct.unpack(raw_size)[0]
 
@@ -209,6 +217,7 @@ class Connection:
         xid, zxid, error_code = reply_header_struct.unpack_from(raw_header)
 
         if error_code:
+            self.opcode_xref.pop(xid)
             return (xid, zxid, exc.get_response_error(error_code))
 
         size -= reply_header_struct.size
