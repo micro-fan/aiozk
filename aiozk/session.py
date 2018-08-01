@@ -196,13 +196,15 @@ class Session(object):
                 self.set_heartbeat()
                 self.retry_policy.clear(request)
             except (exc.NodeExists, exc.NoNode, exc.NotEmpty):
+                self.retry_policy.clear(request)
                 raise
             except asyncio.CancelledError:
-                pass
+                self.retry_policy.clear(request)
             except exc.ConnectError:
                 self.state.transition_to(States.SUSPENDED)
             except Exception as e:
                 log.exception('Send exception: {}'.format(e))
+                self.retry_policy.clear(request)
                 raise e
         return response
 

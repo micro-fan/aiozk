@@ -217,6 +217,7 @@ class Connection:
         xid, zxid, error_code = reply_header_struct.unpack_from(raw_header)
 
         if error_code:
+            self.opcode_xref.pop(xid)
             return (xid, zxid, exc.get_response_error(error_code))
 
         size -= reply_header_struct.size
