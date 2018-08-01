@@ -52,11 +52,7 @@ class Connection:
         self.read_timeout = read_timeout or DEFAULT_READ_TIMEOUT
         self.read_loop_task = None
 
-    async def connect(self):
-        log.debug("Initial connection to server %s:%d", self.host, self.port)
-        self.reader, self.writer = await asyncio.open_connection(self.host, self.port,
-                                                                 loop=self.loop)
-
+    async def _make_handshake(self):
         self.host_ip = self.writer.transport.get_extra_info('peername')[0]
 
         log.debug("Sending 'srvr' command to %s:%d", self.host, self.port)
@@ -75,7 +71,18 @@ class Connection:
         log.debug("Read-only mode: %s", self.start_read_only)
 
         log.debug("Actual connection to server %s:%d", self.host, self.port)
-        self.writer.close()
+
+
+    async def connect(self):
+        log.debug("Initial connection to server %s:%d", self.host, self.port)
+        self.reader, self.writer = await asyncio.open_connection(self.host, self.port,
+                                                                 loop=self.loop)
+
+        try:
+            await self._make_handshake()
+        finally:
+            self.writer.close()
+
         self.reader, self.writer = await asyncio.open_connection(self.host, self.port,
                                                                  loop=self.loop)
 
@@ -194,7 +201,7 @@ class Connection:
         return b''.join(payload)
 
     async def read_response(self, initial_connect=False):
-        raw_size = await self.reader.read(size_struct.size)
+        raw_size = await self._read(size_struct.size)
         if raw_size == b'':
             raise ConnectionAbortedError
         size = size_struct.unpack(raw_size)[0]

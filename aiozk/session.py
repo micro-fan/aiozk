@@ -59,6 +59,7 @@ class Session(object):
 
         self.watch_callbacks = collections.defaultdict(set)
 
+        self.started = False
         self.closing = False
 
     async def ensure_safe_state(self, writing=False):
@@ -72,8 +73,13 @@ class Session(object):
         await self.state.wait_for(*safe_states, loop=self.loop)
 
     async def start(self):
+        if self.started:
+            return
+        log.debug('Start session...')
         self.loop.call_soon(self.set_heartbeat)
+        self.loop.create_task(self.repair_loop())
         self.repair_loop_task = self.loop.create_task(self.repair_loop())
+        self.started = True
         await self.ensure_safe_state()
 
     async def find_server(self, allow_read_only):
@@ -90,6 +96,7 @@ class Session(object):
                 conn = await self.make_connection(host, port)
                 if not conn or (conn.start_read_only and not allow_read_only):
                     continue
+                log.info("Connected to %s:%s", host, port)
                 break
 
             if not conn:

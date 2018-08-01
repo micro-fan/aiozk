@@ -3,7 +3,7 @@ import uuid
 
 import pytest
 
-from ..exc import NoNode
+from aiozk.exc import NoNode
 
 
 @pytest.fixture
