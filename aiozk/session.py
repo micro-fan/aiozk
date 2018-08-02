@@ -4,12 +4,12 @@ import logging
 import random
 import re
 
-# from tornado import gen, ioloop
-
 from aiozk import protocol, exc
 from .connection import Connection
-from .states import States, SessionStateMachine
 from .retry import RetryPolicy
+from .states import States, SessionStateMachine
+
+# from tornado import gen, ioloop
 
 
 DEFAULT_ZOOKEEPER_PORT = 2181
@@ -74,10 +74,10 @@ class Session(object):
 
     async def start(self):
         if self.started:
+            await self.ensure_safe_state()
             return
         log.debug('Start session...')
         self.loop.call_soon(self.set_heartbeat)
-        self.loop.create_task(self.repair_loop())
         self.repair_loop_task = self.loop.create_task(self.repair_loop())
         self.started = True
         await self.ensure_safe_state()
@@ -163,8 +163,6 @@ class Session(object):
 
             await self.find_server(allow_read_only=self.allow_read_only)
 
-            session_was_lost = self.state == States.LOST
-
             try:
                 await asyncio.wait_for(self.establish_session(), self.timeout, loop=self.loop)
             except (exc.SessionLost, asyncio.TimeoutError) as e:
@@ -200,6 +198,7 @@ class Session(object):
                 raise
             except asyncio.CancelledError:
                 self.retry_policy.clear(request)
+                raise
             except exc.ConnectError:
                 self.state.transition_to(States.SUSPENDED)
             except Exception as e:

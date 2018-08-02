@@ -28,6 +28,7 @@ async def test_start_session_twice(session):
         session.loop.create_task.assert_called_once()
         ensure_safe_state.assert_called_once()
 
+
 @pytest.mark.asyncio
 async def test_close_not_started(session):
     await session.close()
