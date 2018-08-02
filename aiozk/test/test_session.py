@@ -6,11 +6,6 @@ import aiozk
 import pytest
 
 
-def coroutine_mock(return_value=None):
-    stub = mock.Mock(return_value=return_value)
-    return asyncio.coroutine(stub)
-
-
 @pytest.fixture
 def session():
     fake_retry_policy = mock.MagicMock()
@@ -20,13 +15,16 @@ def session():
 
 @pytest.mark.asyncio
 async def test_start_session_twice(session):
-    with mock.patch.object(session, 'ensure_safe_state', coroutine_mock()) as ensure_safe_state:
+    ensure_safe_state = mock.Mock()
+    with mock.patch.object(session, 'ensure_safe_state', asyncio.coroutine(ensure_safe_state)):
         await session.start()
+        ensure_safe_state.assert_called_once_with()
+        ensure_safe_state.reset_mock()
         await session.start()
+        ensure_safe_state.assert_called_once_with()
 
         session.loop.call_soon.assert_called_once()
         session.loop.create_task.assert_called_once()
-        ensure_safe_state.assert_called_once()
 
 
 @pytest.mark.asyncio
