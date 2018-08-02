@@ -26,6 +26,7 @@ setup(
         'coverage',
         'flake8',
         'pytest',
+        'pytest-asyncio',
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',
