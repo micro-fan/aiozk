@@ -51,16 +51,29 @@ await barrier.wait()
 
 To understand ideas behind recipes [please read this](https://zookeeper.apache.org/doc/trunk/recipes.html) and [even more recipes here](http://curator.apache.org/curator-recipes/index.html). Make sure you're familiar with all recipes before doing something new by yourself, especially when it involves more than few zookeeper calls.
 
-## Testing approach
 
-Most of tests are integration tests and running on real zookeeper instances.
-We've chosen `zookeeper 3.5` version since it has an ability to dynamic reconfiguration and we're going to do all connecting/reconnecting/watches tests on zk docker cluster as this gives us the ability to restart any server and see what happens.
+## Testing
 
 **NB**: please ensure that you're using recent `docker-compose` version. You can get it by running
 
 ```
 pip install --user -U docker-compose
 ```
+
+
+### Run tests
+
+```
+# you should have access to docker
+
+docker-compose build
+./test-runner.sh
+```
+
+### Testing approach
+
+Most of tests are integration tests and running on real zookeeper instances.
+We've chosen `zookeeper 3.5` version since it has an ability to dynamic reconfiguration and we're going to do all connecting/reconnecting/watches tests on zk docker cluster as this gives us the ability to restart any server and see what happens.
 
 ```sh
 # first terminal: launch zookeeper cluster

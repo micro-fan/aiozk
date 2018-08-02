@@ -5,6 +5,9 @@ docker-compose up --abort-on-container-exit
 
 # check last docker-compose status
 # rabbit stops with 143 exit code
+if [ -z "$TRAVIS"]; then
+    docker-compose down -v
+fi
 CODE=`docker-compose ps -q | xargs docker inspect -f '{{ .State.ExitCode }}' | grep -vE '(0|3|143)' | wc -l | tr -d ' '`
 
 echo "Tests completed with exit code $CODE"
