@@ -27,6 +27,7 @@ setup(
         'flake8',
         'pytest',
         'pytest-asyncio',
+        'asynctest',
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',
