@@ -193,7 +193,7 @@ class Session(object):
                 self.last_zxid = zxid
                 self.set_heartbeat()
                 self.retry_policy.clear(request)
-            except (exc.NodeExists, exc.NoNode, exc.NotEmpty):
+            except (exc.NodeExists, exc.NoNode, exc.NotEmpty, exc.BadVersion):
                 self.retry_policy.clear(request)
                 raise
             except asyncio.CancelledError:

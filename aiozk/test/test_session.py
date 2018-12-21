@@ -59,6 +59,15 @@ async def test_send_no_node(session):
 
 
 @pytest.mark.asyncio
+async def test_send_bad_version(session):
+    req = mock.MagicMock()
+    session.conn.send.side_effect = exc.BadVersion
+    with pytest.raises(exc.BadVersion):
+        await session.send(req)
+    session.conn.send.assert_called_once()
+
+
+@pytest.mark.asyncio
 async def test_send_canceled(session):
     req = mock.MagicMock()
     session.conn.send.side_effect = asyncio.CancelledError
