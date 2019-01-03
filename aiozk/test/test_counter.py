@@ -1,7 +1,10 @@
 import asyncio
 import logging
+
 import pytest
+
 from ..recipes.counter import Counter  # noqa
+
 
 async def _simple_helper(zk, path, val):
     counter = zk.recipes.Counter(path, default=val)
@@ -32,11 +35,11 @@ async def test_counter_multiple(zk, path):
         c = zk.recipes.Counter(path)
         await c.start()
         await c.incr()
-    
+
     workers = []
     for _i in range(5):
         workers.append(worker())
-    
+
     done, _pending = await asyncio.wait(workers)
     assert len(done) == 5  # sanity check
     data, stat = await zk.get(path)
@@ -49,13 +52,14 @@ async def test_counter_multiple(zk, path):
 async def test_counter_single_reused(zk, path):
     counter = zk.recipes.Counter(path)
     await counter.start()
+
     async def worker():
         await counter.incr()
 
     workers = []
     for _i in range(5):
         workers.append(worker())
-    
+
     done, _pending = await asyncio.wait(workers)
     assert len(done) == 5
     val = await counter.get_value()

@@ -1,30 +1,30 @@
-import logging
 import asyncio
-# from tornado import gen, concurrent
+import logging
 
-from aiozk import protocol, exc
+from aiozk import exc, protocol
 
+from .features import Features
 from .recipes.proxy import RecipeProxy
 from .session import Session
 from .transaction import Transaction
-from .features import Features
+
+# from tornado import gen, concurrent
 
 
 log = logging.getLogger(__name__)
 
 
 class ZKClient(object):
-
     def __init__(
-            self,
-            servers,
-            chroot=None,
-            session_timeout=10,
-            default_acl=None,
-            retry_policy=None,
-            allow_read_only=False,
-            read_timeout=None,
-            loop=None
+        self,
+        servers,
+        chroot=None,
+        session_timeout=10,
+        default_acl=None,
+        retry_policy=None,
+        allow_read_only=False,
+        read_timeout=None,
+        loop=None,
     ):
         self.loop = loop or asyncio.get_event_loop()
         self.chroot = None
@@ -46,16 +46,13 @@ class ZKClient(object):
         if self.chroot:
             path = "/".join([self.chroot, path])
 
-        normalized = "/".join([
-            name for name in path.split("/")
-            if name
-        ])
+        normalized = "/".join([name for name in path.split("/") if name])
 
         return "/" + normalized
 
     def denormalize_path(self, path):
         if self.chroot and path.startswith(self.chroot):
-            path = path[len(self.chroot):]
+            path = path[len(self.chroot) :]
 
         return path
 
@@ -76,9 +73,7 @@ class ZKClient(object):
         response = await self.session.send(request)
 
         if getattr(request, "path", None) and getattr(response, "stat", None):
-            self.stat_cache[
-                self.denormalize_path(request.path)
-            ] = response.stat
+            self.stat_cache[self.denormalize_path(request.path)] = response.stat
 
         return response
 
@@ -111,8 +106,13 @@ class ZKClient(object):
         return True
 
     async def create(
-            self, path, data=None, acl=None,
-            ephemeral=False, sequential=False, container=False,
+        self,
+        path,
+        data=None,
+        acl=None,
+        ephemeral=False,
+        sequential=False,
+        container=False,
     ):
         if container and not self.features.containers:
             raise ValueError("Cannot create container, feature unavailable.")
@@ -153,8 +153,7 @@ class ZKClient(object):
             else:
                 request = protocol.CreateRequest(path=path, acl=acl)
             request.set_flags(
-                ephemeral=False, sequential=False,
-                container=self.features.containers
+                ephemeral=False, sequential=False, container=self.features.containers
             )
 
             try:
@@ -177,17 +176,14 @@ class ZKClient(object):
     async def deleteall(self, path):
         childs = await self.get_children(path)
         for child in childs:
-            await self.deleteall('/'.join([path, child]))
+            await self.deleteall("/".join([path, child]))
         await self.delete(path, force=True)
 
     async def get(self, path, watch=False):
         # type: (str, bool) -> Tuple[str, protocol.stat.Stat]
         path = self.normalize_path(path)
-        response = await self.send(
-            protocol.GetDataRequest(path=path, watch=watch)
-        )
+        response = await self.send(protocol.GetDataRequest(path=path, watch=watch))
         return (response.data, response.stat)
-
 
     async def get_data(self, path, watch=False):
         response = await self.get(path, watch=watch)
@@ -209,16 +205,12 @@ class ZKClient(object):
         else:
             version = -1
 
-        await self.send(
-            protocol.SetDataRequest(path=path, data=data, version=version)
-        )
+        await self.send(protocol.SetDataRequest(path=path, data=data, version=version))
 
     async def get_children(self, path, watch=False):
         path = self.normalize_path(path)
 
-        response = await self.send(
-            protocol.GetChildren2Request(path=path, watch=watch)
-        )
+        response = await self.send(protocol.GetChildren2Request(path=path, watch=watch))
         return response.children
 
     async def get_acl(self, path):
@@ -235,9 +227,7 @@ class ZKClient(object):
         else:
             version = -1
 
-        await self.send(
-            protocol.SetACLRequest(path=path, acl=acl, version=version)
-        )
+        await self.send(protocol.SetACLRequest(path=path, acl=acl, version=version))
 
     def begin_transaction(self):
         return Transaction(self)
