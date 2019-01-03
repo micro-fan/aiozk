@@ -43,3 +43,20 @@ async def test_cancel_crash(zk, path):
 async def test_closed_close():
     zk = get_client()
     await asyncio.wait_for(zk.session.close(), 2)
+
+
+@pytest.mark.asyncio
+async def test_raw_get(full_zk, path):
+    # type: (aiozk.ZKClient, str) -> None
+    """Test that get returns data + stat"""
+    data, stat = await full_zk.get(path)
+    assert data is None
+    assert stat.version == 0
+
+@pytest.mark.asyncio
+async def test_raw_set(full_zk, path):
+    # type: (aiozk.ZKClent, str) -> None
+    """Test that raw set returns Stat"""
+    stat = await full_zk.set(path, 'asdf', -1)
+    assert stat.data_length == 4
+    assert stat.version == 1

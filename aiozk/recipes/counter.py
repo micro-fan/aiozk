@@ -12,72 +12,75 @@ log = logging.getLogger(__name__)
 
 class Counter(Recipe):
 
-    sub_recipes = {
-        "watcher": DataWatcher
-    }
-
-    def __init__(self, base_path, use_float=False):
-        super(Counter, self).__init__(base_path)
+    def __init__(self, base_path, default=0):
+        super().__init__(base_path)
 
         self.value = None
+        self.numeric_type = type(default)
+        self._default = default
+        self._version = 0
 
-        if use_float:
-            self.numeric_type = float
-        else:
-            self.numeric_type = int
-
-        self.value_sync = self.client.loop.create_future()
+    async def _fetch(self):
+        data, stat = await self.client.get(self.base_path)
+        self._version = stat.version
+        self.value = self.numeric_type(data)
+        return (self.value, stat.version)
 
     async def start(self):
-        self.watcher.add_callback(self.base_path, self.data_callback)
-        await asyncio.sleep(0.01, loop=self.client.loop)
+        base, _leaf = self.base_path.rsplit("/", 1)
+        if base:
+            await self.client.ensure_path(base)
+        try:
+            await self.client.create(self.base_path, str(self._default))
+            self.value = self._default
+            self._version = 0
+        except exc.NodeExists:
+            await self._fetch()
 
-        await self.ensure_path()
-
-        raw_value = await self.client.get_data(self.base_path)
-        self.value = self.numeric_type(raw_value or 0)
-
-    def data_callback(self, new_value):
-        self.value = self.numeric_type(new_value)
-        if not self.value_sync.done():
-            self.value_sync.set_result(None)
-            self.value_sync = self.client.loop.create_future()
+    async def get_value(self):
+        data, _version = await self._fetch()
+        return data
 
     async def set_value(self, value, force=True):
         data = str(value)
-        await self.client.set_data(self.base_path, data, force=force)
+        version = -1 if force else self._version
+        stat = await self.client.set(self.base_path, data, version)
+        self.value = value
+        self._version = stat.version
         log.debug("Set value to '%s': successful", data)
-        await self.value_sync
 
     async def apply_operation(self, operation):
         success = False
         while not success:
-            data = str(operation(self.value))
+            new_value = operation(self.value)
+            data = str(new_value)
             try:
-                await self.client.set_data(self.base_path, data, force=False)
+                stat = await self.client.set(self.base_path, data, self._version)
                 log.debug("Operation '%s': successful", operation.__name__)
-                await self.value_sync
+                self.value = new_value
+                self._version = stat.version
                 success = True
             except exc.BadVersion:
+                await self._fetch()
                 log.debug(
                     "Operation '%s': version mismatch, retrying",
                     operation.__name__
                 )
-                await self.value_sync
 
-    async def incr(self):
+    async def incr(self, by=1):
 
         def increment(value):
-            return value + 1
+            return value + self.numeric_type(by)
 
         await self.apply_operation(increment)
 
-    async def decr(self):
+    async def decr(self, by=1):
 
         def decrement(value):
-            return value - 1
+            return value - self.numeric_type(by)
 
         await self.apply_operation(decrement)
 
     def stop(self):
-        self.watcher.remove_callback(self.base_path, self.data_callback)
+        """Deprecated. Counter no longer needs to be stopped"""
+        pass

@@ -180,13 +180,26 @@ class ZKClient(object):
             await self.deleteall('/'.join([path, child]))
         await self.delete(path, force=True)
 
-    async def get_data(self, path, watch=False):
+    async def get(self, path, watch=False):
+        # type: (str, bool) -> Tuple[str, protocol.stat.Stat]
         path = self.normalize_path(path)
-
         response = await self.send(
             protocol.GetDataRequest(path=path, watch=watch)
         )
-        return response.data
+        return (response.data, response.stat)
+
+
+    async def get_data(self, path, watch=False):
+        response = await self.get(path, watch=watch)
+        return response[0]
+
+    async def set(self, path, data, version):
+        # type: (str, str, int) -> protocol.SetDataResponse
+        path = self.normalize_path(path)
+        response = await self.send(
+            protocol.SetDataRequest(path=path, data=data, version=version)
+        )
+        return response.stat
 
     async def set_data(self, path, data, force=False):
         path = self.normalize_path(path)
