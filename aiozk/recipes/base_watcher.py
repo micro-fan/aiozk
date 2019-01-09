@@ -4,6 +4,7 @@ import inspect
 import logging
 
 from aiozk import exc
+from aiozk import WatchEvent
 
 from .recipe import Recipe
 
@@ -46,11 +47,12 @@ class BaseWatcher(Recipe):
             try:
                 result = await self.fetch(path)
             except exc.NoNode:
-                for callback in self.callbacks[path]:
-                    maybe_future(callback(exc.NoNode), loop=self.client.loop)
-                return
+                result = exc.NoNode
             for callback in self.callbacks[path]:
                 maybe_future(callback(result), loop=self.client.loop)
+            if WatchEvent.CREATED not in self.watched_events \
+                and result == exc.NoNode:
+                return
             try:
                 await self.client.wait_for_events(self.watched_events, path)
             except asyncio.CancelledError:

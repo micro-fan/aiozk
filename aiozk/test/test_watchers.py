@@ -3,6 +3,7 @@ import uuid
 
 import pytest
 
+from .. import WatchEvent
 from ..exc import NoNode
 
 
@@ -58,7 +59,6 @@ async def test_data_watch_delete(zk, path, data_watcher):
     data_watcher.remove_callback(path, data_callback)
 
     await zk.create(path)
-
 
 
 @pytest.mark.asyncio
@@ -158,3 +158,31 @@ async def test_reconnect_watcher(data_watcher, path, zk_disruptor, zk, zk2):
     assert data == test_data
 
     data_watcher.remove_callback(path, data_callback)
+
+
+@pytest.mark.asyncio
+async def test_watcher_fires_after_nonode(zk, data_watcher, child1):
+    """
+    Test that waiting for a nonexistent node is allowed if
+    CREATED is in the watched events
+    """
+    messages = asyncio.Queue()
+    data_watcher.watched_events.append(WatchEvent.CREATED)
+
+    async def callback(d):
+        print('Callback sees', d)
+        await messages.put(d)
+
+    # should trigger fetch right away, getting NoNode
+    data_watcher.add_callback(child1, callback)
+
+    no_node = await asyncio.wait_for(messages.get(), 1)
+    assert no_node == NoNode
+
+    # should trigger watch, which triggers fetch, which gets 'some data'
+    await zk.create(child1, 'some data')
+    some_data = await asyncio.wait_for(messages.get(), 1)
+    assert some_data == b'some data'
+
+    data_watcher.remove_callback(child1, callback)
+    await zk.delete(child1)
