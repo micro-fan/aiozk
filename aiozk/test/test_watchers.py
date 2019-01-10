@@ -186,3 +186,37 @@ async def test_watcher_fires_after_nonode(zk, data_watcher, child1):
 
     data_watcher.remove_callback(child1, callback)
     await zk.delete(child1)
+
+@pytest.mark.asyncio
+async def test_watcher_without_parents(zk, path, child1):
+    """
+    Make sure behavior is sane if ancestor node does not exist
+    """
+    final = f"{child1}/{uuid.uuid4().hex}"
+    watcher = zk.recipes.DataWatcher(wait_for_create=True)
+    messages = asyncio.Queue()
+
+    async def callback(d):
+        print('callback sees', d)
+        await messages.put(d)
+
+    watcher.add_callback(final, callback)
+
+    # full path doesn't exist
+    no_node = await asyncio.wait_for(messages.get(), 1)
+    assert no_node == NoNode
+
+    # create parent, no message should arrive
+    await zk.create(path)
+    await zk.create(child1)
+    assert messages.empty() == True
+
+    # create final node, should get 'howdy'
+    await zk.create(final, b'howdy')
+    howdy = await asyncio.wait_for(messages.get(), 1)
+    assert howdy == b'howdy'
+
+    watcher.remove_callback(final, callback)
+    await zk.delete(final)
+    await zk.delete(child1)
+    await zk.delete(path)
