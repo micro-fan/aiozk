@@ -134,6 +134,7 @@ class Session(object):
             )
         )
         if connection_response is None:
+            self.last_zxid = None
             raise exc.SessionLost()
         zxid, response = connection_response
         self.last_zxid = zxid
