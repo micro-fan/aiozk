@@ -191,6 +191,7 @@ class Session(object):
             log.error(
                 'Repair loop task failed with exception: {error}'.format(error=error)
             )
+            raise error
 
     async def send(self, request):
         response = None
