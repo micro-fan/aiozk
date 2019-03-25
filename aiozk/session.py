@@ -134,14 +134,19 @@ class Session(object):
             )
         )
         if connection_response is None:
+            # handle issue with inconsistent zxid on reconnection
+            if self.state.current_state != States.LOST:
+                self.state.transition_to(States.LOST)
             self.last_zxid = None
             raise exc.SessionLost()
+
         zxid, response = connection_response
         self.last_zxid = zxid
 
         if response.session_id == 0:  # invalid session, probably expired
             log.debug('Session lost')
-            self.state.transition_to(States.LOST)
+            if self.state.current_state != States.LOST:
+                self.state.transition_to(States.LOST)
             raise exc.SessionLost()
 
         log.info("Got session id %s", hex(response.session_id))
@@ -155,32 +160,37 @@ class Session(object):
 
     async def repair_loop(self):
         log.debug('repair loop starting')
-        while not self.closing:
-            log.debug('Await for repairable state')
-            await self.state.wait_for(States.SUSPENDED, States.LOST, loop=self.loop)
-            log.debug('Repair state reached')
-            if self.closing:
-                break
+        try:
+            while not self.closing:
+                log.debug('Await for repairable state')
+                await self.state.wait_for(States.SUSPENDED, States.LOST, loop=self.loop)
+                log.debug('Repair state reached')
+                if self.closing:
+                    break
 
-            await self.find_server(allow_read_only=self.allow_read_only)
+                await self.find_server(allow_read_only=self.allow_read_only)
 
-            try:
-                await asyncio.wait_for(self.establish_session(), self.timeout, loop=self.loop)
-            except (exc.SessionLost, asyncio.TimeoutError) as e:
-                log.info('Session closed: {}'.format(e))
-                self.conn.abort(exc.SessionLost)
-                await self.conn.close(self.timeout)  # TODO: make real timeout
-                self.session_id = None
-                self.password = b'\x00'
-                continue
+                try:
+                    await asyncio.wait_for(self.establish_session(), self.timeout, loop=self.loop)
+                except (exc.SessionLost, asyncio.TimeoutError) as e:
+                    log.info('Session closed: {}'.format(e))
+                    self.conn.abort(exc.SessionLost)
+                    await self.conn.close(self.timeout)  # TODO: make real timeout
+                    self.session_id = None
+                    self.password = b'\x00'
+                    continue
 
-            if self.conn.start_read_only:
-                self.state.transition_to(States.READ_ONLY)
-            else:
-                self.state.transition_to(States.CONNECTED)
+                if self.conn.start_read_only:
+                    self.state.transition_to(States.READ_ONLY)
+                else:
+                    self.state.transition_to(States.CONNECTED)
 
-            self.conn.start_read_loop()
-            await self.set_existing_watches()
+                self.conn.start_read_loop()
+                await self.set_existing_watches()
+        except Exception as error:
+            log.error(
+                'Repair loop task failed with exception: {error}'.format(error=error)
+            )
 
     async def send(self, request):
         response = None
@@ -305,3 +315,5 @@ class Session(object):
             self.state.transition_to(States.LOST)
         if self.conn:
             await self.conn.close(self.timeout)
+        self.closing = False
+        self.started = False
