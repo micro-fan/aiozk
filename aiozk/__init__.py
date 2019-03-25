@@ -1,4 +1,4 @@
-__version__ = '0.11.0'
+__version__ = '0.12.0'
 version_info = __version__.split('.')
 
 from .client import ZKClient  # noqa
