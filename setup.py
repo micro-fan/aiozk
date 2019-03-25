@@ -5,11 +5,15 @@ from setuptools import setup, find_packages
 with io.open('aiozk/__init__.py', encoding='utf-8') as f:
     version = re.search(r"__version__ = '(.+)'", f.read()).group(1)
 
+with open('README.md', 'r', encoding='utf-8') as f:
+    readme = f.read()
 
 setup(
     name='aiozk',
     version=version,
     description='Asyncio client for Zookeeper.',
+    long_description=readme,
+    long_description_content_type='text/markdown',
     author='Kirill Pinchuk',
     author_email='cybergrind@gmail.com',
     maintainer='Kirill Pinchuk',
