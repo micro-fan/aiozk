@@ -61,6 +61,21 @@ async def test_inconsistent_zxid():
     except asyncio.TimeoutError as exc:
         pytest.fail("Failed with timeout on session reconnection attemt")
 
+
+@pytest.mark.asyncio
+async def test_session_reconnect():
+    async def coro():
+        zk = get_client()
+        await zk.start()
+        await zk.session.close()
+        await zk.session.start()
+        await zk.session.close()
+    try:
+        await asyncio.wait_for(coro(), timeout=10)
+    except asyncio.TimeoutError as exc:
+        pytest.fail("Failed with timeout on session reconnection attemt")
+
+
 @pytest.mark.asyncio
 async def test_raw_get(full_zk, path):
     # type: (aiozk.ZKClient, str) -> None

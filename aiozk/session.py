@@ -79,8 +79,14 @@ class Session(object):
         log.debug('Start session...')
         self.loop.call_soon(self.set_heartbeat)
         self.repair_loop_task = self.loop.create_task(self.repair_loop())
+        self.repair_loop_task.add_done_callback(self._on_repair_loop_done)
         self.started = True
         await self.ensure_safe_state()
+
+    def _on_repair_loop_done(self, repair_loop_task):
+        repair_loop_exception = repair_loop_task.exception()
+        if repair_loop_exception:
+            log.error('Repair loop task failed with exception: {error}'.format(error=repair_loop_exception))
 
     async def find_server(self, allow_read_only):
         conn = None
@@ -159,39 +165,32 @@ class Session(object):
         self.last_zxid = zxid
 
     async def repair_loop(self):
-        log.debug('repair loop starting')
-        try:
-            while not self.closing:
-                log.debug('Await for repairable state')
-                await self.state.wait_for(States.SUSPENDED, States.LOST, loop=self.loop)
-                log.debug('Repair state reached')
-                if self.closing:
-                    break
+        while not self.closing:
+            log.debug('Await for repairable state')
+            await self.state.wait_for(States.SUSPENDED, States.LOST, loop=self.loop)
+            log.debug('Repair state reached')
+            if self.closing:
+                break
 
-                await self.find_server(allow_read_only=self.allow_read_only)
+            await self.find_server(allow_read_only=self.allow_read_only)
 
-                try:
-                    await asyncio.wait_for(self.establish_session(), self.timeout, loop=self.loop)
-                except (exc.SessionLost, asyncio.TimeoutError) as e:
-                    log.info('Session closed: {}'.format(e))
-                    self.conn.abort(exc.SessionLost)
-                    await self.conn.close(self.timeout)  # TODO: make real timeout
-                    self.session_id = None
-                    self.password = b'\x00'
-                    continue
+            try:
+                await asyncio.wait_for(self.establish_session(), self.timeout, loop=self.loop)
+            except (exc.SessionLost, asyncio.TimeoutError) as e:
+                log.info('Session closed: {}'.format(e))
+                self.conn.abort(exc.SessionLost)
+                await self.conn.close(self.timeout)  # TODO: make real timeout
+                self.session_id = None
+                self.password = b'\x00'
+                continue
 
-                if self.conn.start_read_only:
-                    self.state.transition_to(States.READ_ONLY)
-                else:
-                    self.state.transition_to(States.CONNECTED)
+            if self.conn.start_read_only:
+                self.state.transition_to(States.READ_ONLY)
+            else:
+                self.state.transition_to(States.CONNECTED)
 
-                self.conn.start_read_loop()
-                await self.set_existing_watches()
-        except Exception as error:
-            log.error(
-                'Repair loop task failed with exception: {error}'.format(error=error)
-            )
-            raise error
+            self.conn.start_read_loop()
+            await self.set_existing_watches()
 
     async def send(self, request):
         response = None
