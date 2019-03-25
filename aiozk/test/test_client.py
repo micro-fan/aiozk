@@ -5,7 +5,6 @@ import pytest
 
 from aiozk import WatchEvent
 from .conftest import get_client
-from aiozk.session import States
 
 
 logging.getLogger('asyncio').setLevel(logging.DEBUG)
