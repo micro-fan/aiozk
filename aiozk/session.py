@@ -79,8 +79,14 @@ class Session(object):
         log.debug('Start session...')
         self.loop.call_soon(self.set_heartbeat)
         self.repair_loop_task = self.loop.create_task(self.repair_loop())
+        self.repair_loop_task.add_done_callback(self._on_repair_loop_done)
         self.started = True
         await self.ensure_safe_state()
+
+    def _on_repair_loop_done(self, repair_loop_task):
+        repair_loop_exception = repair_loop_task.exception()
+        if repair_loop_exception:
+            log.error('Repair loop task failed with exception: {error}'.format(error=repair_loop_exception))
 
     async def find_server(self, allow_read_only):
         conn = None
@@ -134,13 +140,19 @@ class Session(object):
             )
         )
         if connection_response is None:
+            # handle issue with inconsistent zxid on reconnection
+            if self.state.current_state != States.LOST:
+                self.state.transition_to(States.LOST)
+            self.last_zxid = None
             raise exc.SessionLost()
+
         zxid, response = connection_response
         self.last_zxid = zxid
 
         if response.session_id == 0:  # invalid session, probably expired
             log.debug('Session lost')
-            self.state.transition_to(States.LOST)
+            if self.state.current_state != States.LOST:
+                self.state.transition_to(States.LOST)
             raise exc.SessionLost()
 
         log.info("Got session id %s", hex(response.session_id))
@@ -153,7 +165,6 @@ class Session(object):
         self.last_zxid = zxid
 
     async def repair_loop(self):
-        log.debug('repair loop starting')
         while not self.closing:
             log.debug('Await for repairable state')
             await self.state.wait_for(States.SUSPENDED, States.LOST, loop=self.loop)
@@ -304,3 +315,5 @@ class Session(object):
             self.state.transition_to(States.LOST)
         if self.conn:
             await self.conn.close(self.timeout)
+        self.closing = False
+        self.started = False
