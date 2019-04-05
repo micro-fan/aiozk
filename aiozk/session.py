@@ -84,7 +84,10 @@ class Session(object):
         await self.ensure_safe_state()
 
     def _on_repair_loop_done(self, repair_loop_task):
-        repair_loop_exception = repair_loop_task.exception()
+        try:
+            repair_loop_exception = repair_loop_task.exception()
+        except asyncio.CancelledError:
+            return
         if repair_loop_exception:
             log.error('Repair loop task failed with exception: {error}'.format(error=repair_loop_exception))
 
