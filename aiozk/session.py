@@ -3,6 +3,7 @@ import collections
 import logging
 import random
 import re
+from contextlib import suppress
 
 from aiozk import protocol, exc
 from .connection import Connection
@@ -312,6 +313,8 @@ class Session(object):
         self.closing = True
         if self.repair_loop_task:
             self.repair_loop_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await self.repair_loop_task
             await asyncio.wait_for(self.send(protocol.CloseRequest()), self.timeout,
                                    loop=self.loop)
         if self.state.current_state != States.LOST:

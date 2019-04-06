@@ -4,6 +4,7 @@ import logging
 import re
 import struct
 import sys
+from contextlib import suppress
 from time import time
 
 # from tornado import ioloop, iostream, gen, concurrent, tcpclient
@@ -270,7 +271,8 @@ class Connection:
         self.closing = True
         if self.read_loop_task:
             self.read_loop_task.cancel()
-            await self.read_loop_task
+            with suppress(asyncio.CancelledError):
+                await self.read_loop_task
         if self.pending or (self.pending_specials and self.pending_specials != {None: []}):
             log.warning('Pendings: {}; specials:  {}'.format(self.pending, self.pending_specials))
 
