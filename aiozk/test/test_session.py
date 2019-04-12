@@ -50,6 +50,7 @@ async def test_close_not_started(session):
 
 @pytest.mark.asyncio
 async def test_close_produces_no_error_log(session):
+    session.conn.send.return_value = (mock.MagicMock(), mock.MagicMock())
     await session.start()
     repair_loop_task = session.repair_loop_task
 
