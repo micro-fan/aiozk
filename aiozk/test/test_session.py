@@ -1,5 +1,7 @@
 import asyncio
+from asyncio import CancelledError, Future
 from unittest import mock
+from unittest.mock import MagicMock, patch
 
 import aiozk.session
 
@@ -44,6 +46,19 @@ async def test_start_session_twice(session):
 async def test_close_not_started(session):
     await session.close()
     assert not session.closing
+
+
+@pytest.mark.asyncio
+async def test_close_produces_no_error_log(session):
+    repair_loop_task = session.repair_loop_task
+    with patch.object(aiozk.session.log, 'error') as err_log_mock:
+
+        await session.close()
+
+        with pytest.raises(CancelledError):
+            await repair_loop_task
+
+        err_log_mock.assert_not_called()
 
 
 @pytest.mark.asyncio
