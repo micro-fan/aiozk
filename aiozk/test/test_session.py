@@ -1,7 +1,7 @@
 import asyncio
-from asyncio import CancelledError, Future
+from asyncio import CancelledError
 from unittest import mock
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import aiozk.session
 
