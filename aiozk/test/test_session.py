@@ -50,9 +50,10 @@ async def test_close_not_started(session):
 
 @pytest.mark.asyncio
 async def test_close_produces_no_error_log(session):
+    await session.start()
     repair_loop_task = session.repair_loop_task
-    with patch.object(aiozk.session.log, 'error') as err_log_mock:
 
+    with patch.object(aiozk.session.log, 'error') as err_log_mock:
         await session.close()
 
         with pytest.raises(CancelledError):
