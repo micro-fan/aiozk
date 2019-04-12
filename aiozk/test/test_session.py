@@ -1,6 +1,5 @@
 import asyncio
 from unittest import mock
-from unittest.mock import patch
 
 import aiozk.session
 
@@ -54,7 +53,7 @@ async def test_close_produces_no_error_log(session):
     await session.start()
     repair_loop_task = session.repair_loop_task
 
-    with patch.object(aiozk.session.log, 'error') as err_log_mock:
+    with mock.patch.object(aiozk.session.log, 'error') as err_log_mock:
         await session.close()
 
         with pytest.raises(asyncio.CancelledError):
