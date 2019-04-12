@@ -84,6 +84,9 @@ class Session(object):
         await self.ensure_safe_state()
 
     def _on_repair_loop_done(self, repair_loop_task):
+        if self.closing and repair_loop_task.cancelled():
+            return
+
         repair_loop_exception = repair_loop_task.exception()
         if repair_loop_exception:
             log.error('Repair loop task failed with exception: {error}'.format(error=repair_loop_exception))
