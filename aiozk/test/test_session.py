@@ -25,6 +25,7 @@ def session(event_loop):
     session.state.transition_to(aiozk.session.States.CONNECTED)
     session.conn = asynctest.MagicMock()
     session.conn.send = asynctest.CoroutineMock()
+    session.conn.close = asynctest.CoroutineMock()
     session.ensure_safe_state = asynctest.CoroutineMock()
     session.set_heartbeat = mock.Mock()
     return session
