@@ -87,6 +87,10 @@ class Session(object):
         if self.closing and repair_loop_task.cancelled():
             return
 
+        if repair_loop_task.cancelled():
+            log.error('Repair loop task cancelled when session is not in "closing" state')
+            return
+
         repair_loop_exception = repair_loop_task.exception()
         if repair_loop_exception:
             log.error('Repair loop task failed with exception: {error}'.format(error=repair_loop_exception))
