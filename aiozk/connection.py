@@ -5,6 +5,7 @@ import re
 import struct
 import sys
 from time import time
+from contextlib import suppress
 
 # from tornado import ioloop, iostream, gen, concurrent, tcpclient
 
@@ -72,7 +73,6 @@ class Connection:
 
         log.debug("Actual connection to server %s:%d", self.host, self.port)
 
-
     async def connect(self):
         log.debug("Initial connection to server %s:%d", self.host, self.port)
         self.reader, self.writer = await asyncio.open_connection(self.host, self.port,
@@ -130,16 +130,8 @@ class Connection:
         else:
             self.pending[xid] = f
 
-        def handle_write(write_future):
-            try:
-                write_future.result()
-            except Exception as e:
-                log.exception('Handle future error')
-                self.abort()
-
         try:
             self.writer.write(payload)
-            # handle_write(f)
         except Exception as e:
             log.exception('Exception during write')
             self.abort()
@@ -268,9 +260,12 @@ class Connection:
         if self.closing:
             return
         self.closing = True
+
         if self.read_loop_task:
             self.read_loop_task.cancel()
-            await self.read_loop_task
+            with suppress(asyncio.CancelledError):
+                await self.read_loop_task
+
         if self.pending or (self.pending_specials and self.pending_specials != {None: []}):
             log.warning('Pendings: {}; specials:  {}'.format(self.pending, self.pending_specials))
 
