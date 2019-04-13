@@ -23,9 +23,22 @@ def session(event_loop):
     session.state.transition_to(aiozk.session.States.CONNECTED)
     session.conn = asynctest.MagicMock()
     session.conn.send = asynctest.CoroutineMock()
+    session.conn.close = asynctest.CoroutineMock()
     session.ensure_safe_state = asynctest.CoroutineMock()
     session.set_heartbeat = mock.Mock()
     return session
+
+
+def prepare_repair_loop_callback_done_future(session):
+    """Creates future that Awaits for session.repair_loop_task to be completed and returns value of session.closing"""
+    future = asyncio.Future()
+    repair_loop_task = session.repair_loop_task
+
+    def set_result(_):
+        future.set_result(session.closing)
+
+    repair_loop_task.add_done_callback(set_result)
+    return future
 
 
 @pytest.mark.asyncio
@@ -44,6 +57,40 @@ async def test_start_session_twice(session):
 async def test_close_not_started(session):
     await session.close()
     assert not session.closing
+
+
+@pytest.mark.asyncio
+async def test_close_produces_no_error_log(session):
+    session.conn.send.return_value = (mock.MagicMock(), mock.MagicMock())
+    await session.start()
+
+    repair_loop_callback_done = prepare_repair_loop_callback_done_future(session)
+    with mock.patch.object(aiozk.session.log, 'error') as err_log_mock:
+
+        assert not session.closing
+        await session.close()
+
+        session_closing = await repair_loop_callback_done
+
+        assert session_closing
+        assert not session.closing
+        err_log_mock.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_repair_loop_task_cancellation_produces_error_log(session):
+    await session.start()
+
+    repair_loop_callback_done = prepare_repair_loop_callback_done_future(session)
+    with mock.patch.object(aiozk.session.log, 'error') as err_log_mock:
+        session.repair_loop_task.cancel()
+
+        with pytest.raises(asyncio.CancelledError):
+            await session.repair_loop_task
+
+        session_closing = await repair_loop_callback_done
+        assert not session_closing
+        err_log_mock.assert_called_once_with('Repair loop task cancelled when session is not in "closing" state')
 
 
 @pytest.mark.asyncio
