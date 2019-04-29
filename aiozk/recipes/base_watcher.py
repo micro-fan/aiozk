@@ -36,6 +36,7 @@ class BaseWatcher(Recipe):
         self.callbacks[path].discard(callback)
 
         if not self.callbacks[path]:
+            self.callbacks.pop(path)
             self.loops.pop(path).cancel()
 
     async def fetch(self, path):

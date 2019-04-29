@@ -257,6 +257,8 @@ class Session(object):
 
     def remove_watch_callback(self, event_type, path, callback):
         self.watch_callbacks[(event_type, path)].discard(callback)
+        if not self.watch_callbacks[(event_type, path)]:
+            self.watch_callbacks.pop((event_type, path))
 
     def event_dispatch(self, event):
         log.debug("Got watch event: %s", event)
