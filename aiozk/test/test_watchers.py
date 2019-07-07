@@ -187,6 +187,7 @@ async def test_watcher_fires_after_nonode(zk, data_watcher, child1):
     data_watcher.remove_callback(child1, callback)
     await zk.delete(child1)
 
+
 @pytest.mark.asyncio
 async def test_watcher_without_parents(zk, path, child1):
     """
