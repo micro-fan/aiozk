@@ -30,7 +30,7 @@ class Lease(SequentialRecipe):
             log.warning("Lease for %s already obtained.", self.base_path)
 
         callback = partial(asyncio.ensure_future, self.release(), loop=self.client.loop)
-        self.client.loop.call_later(time_limit, callback)
+        self.client.loop.call_later(duration.total_seconds(), callback)
         return True
 
     async def release(self):

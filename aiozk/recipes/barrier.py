@@ -23,10 +23,6 @@ class Barrier(Recipe):
             pass
 
     async def wait(self, timeout=None):
-        time_limit = None
-        if timeout is not None:
-            time_limit = time.time() + timeout
-
         barrier_lifted = self.client.wait_for_events(
             [WatchEvent.DELETED], self.path
         )
@@ -36,8 +32,8 @@ class Barrier(Recipe):
             return
 
         try:
-            if time_limit:
-                await asyncio.wait_for(barrier_lifted, time_limit, loop=self.client.loop)
+            if timeout:
+                await asyncio.wait_for(barrier_lifted, timeout, loop=self.client.loop)
             else:
                 await barrier_lifted
         except asyncio.TimeoutError:

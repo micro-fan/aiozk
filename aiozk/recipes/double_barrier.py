@@ -21,10 +21,6 @@ class DoubleBarrier(SequentialRecipe):
 
     async def enter(self, timeout=None):
         log.debug("Entering double barrier %s", self.base_path)
-        time_limit = None
-        if timeout is not None:
-            time_limit = time.time() + timeout
-
         barrier_lifted = self.client.wait_for_events(
             [WatchEvent.CREATED], self.sentinel_path
         )
@@ -43,8 +39,8 @@ class DoubleBarrier(SequentialRecipe):
             return
 
         try:
-            if time_limit:
-                await asyncio.wait_for(barrier_lifted, time_limit, loop=self.client.loop)
+            if timeout:
+                await asyncio.wait_for(barrier_lifted, timeout, loop=self.client.loop)
             else:
                 await barrier_lifted
         except asyncio.TimeoutError:
@@ -52,17 +48,13 @@ class DoubleBarrier(SequentialRecipe):
 
     async def leave(self, timeout=None):
         log.debug("Leaving double barrier %s", self.base_path)
-        time_limit = None
-        if timeout is not None:
-            time_limit = time.time() + timeout
-
         owned_positions, participants = await self.analyze_siblings()
         while len(participants) > 1:
             if owned_positions["worker"] == 0:
-                await self.wait_on_sibling(participants[-1], time_limit)
+                await self.wait_on_sibling(participants[-1], timeout)
             else:
                 await self.delete_unique_znode("worker")
-                await self.wait_on_sibling(participants[0], time_limit)
+                await self.wait_on_sibling(participants[0], timeout)
 
             owned_positions, participants = await self.analyze_siblings()
 

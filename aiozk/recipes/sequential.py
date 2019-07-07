@@ -64,7 +64,7 @@ class SequentialRecipe(Recipe):
                 owned_positions[self.determine_znode_label(path)] = index
         return (owned_positions, siblings)
 
-    async def wait_on_sibling(self, sibling, time_limit=None):
+    async def wait_on_sibling(self, sibling, timeout=None):
         log.debug("Waiting on sibling %s", sibling)
 
         path = self.sibling_path(sibling)
@@ -76,8 +76,8 @@ class SequentialRecipe(Recipe):
             unblocked.set_result(None)
 
         try:
-            if time_limit:
-                await asyncio.wait_for(unblocked, time_limit, loop=self.client.loop)
+            if timeout:
+                await asyncio.wait_for(unblocked, timeout, loop=self.client.loop)
             else:
                 await unblocked
         except asyncio.TimeoutError:
