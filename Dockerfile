@@ -1,4 +1,4 @@
-FROM tipsi/base_python:1.0.6
+FROM tipsi/base_python:1.0.8
 
 WORKDIR /code
 
