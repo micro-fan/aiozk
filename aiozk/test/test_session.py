@@ -51,6 +51,7 @@ async def test_start_session_twice(session):
 
     session.loop.call_soon.assert_called_once()
     session.loop.create_task.assert_called_once()
+    session.repair_loop_task.cancel()
 
 
 @pytest.mark.asyncio
