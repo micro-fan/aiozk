@@ -1,4 +1,5 @@
 import asyncio
+import time
 import uuid
 
 import pytest
@@ -221,3 +222,42 @@ async def test_watcher_without_parents(zk, path, child1):
     await zk.delete(final)
     await zk.delete(child1)
     await zk.delete(path)
+
+
+@pytest.mark.asyncio
+async def test_multi_watcher(zk, path):
+    num = 1000
+    dw = zk.recipes.DataWatcher()
+    dw.set_client(zk)
+    on_delete = False
+    cat = {}
+    out = []
+    await zk.create(path, container=True)
+
+    def gen_cb(name):
+        cat[name] = 1
+
+        def cb(resp):
+            out.append(1)
+            if on_delete:
+                del (cat[name])
+                to_remove = list(dw.callbacks[name])[0]
+                dw.remove_callback(name, to_remove)
+        return cb
+
+    for i in range(num):
+        watch_path = f'{path}/watcher_{i}'
+        resp_path = await zk.create(watch_path, data=str(i), ephemeral=True, sequential=True)
+        dw.add_callback(resp_path, gen_cb(resp_path))
+
+    await asyncio.sleep(0.1)
+    assert len(out) == num
+    # lock python to force zk heartbeats missing
+    time.sleep(13)
+    on_delete = True
+    await zk.session.ensure_safe_state()
+    while num * 2 - len(out) > 10:
+        await asyncio.sleep(1)
+
+    assert len(out) == num * 2
+    await zk.deleteall(path)

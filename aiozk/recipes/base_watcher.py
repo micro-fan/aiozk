@@ -3,11 +3,9 @@ import collections
 import inspect
 import logging
 
-from aiozk import exc
-from aiozk import WatchEvent
+from aiozk import WatchEvent, exc
 
 from .recipe import Recipe
-
 
 log = logging.getLogger(__name__)
 
@@ -49,15 +47,24 @@ class BaseWatcher(Recipe):
                 result = await self.fetch(path)
             except exc.NoNode:
                 result = exc.NoNode
-            for callback in self.callbacks[path]:
+            except exc.ZKError as e:
+                log.exception('Exception in watch loop: {}'.format(e))
+                log.info('Waiting for safe state...')
+                await self.client.session.ensure_safe_state()
+                continue
+            except Exception:
+                log.exception('Not handled in watch loop:')
+                raise
+
+            for callback in self.callbacks[path].copy():
                 maybe_future(callback(result), loop=self.client.loop)
-            if WatchEvent.CREATED not in self.watched_events \
-                and result == exc.NoNode:
+            if WatchEvent.CREATED not in self.watched_events and result == exc.NoNode:
                 return
             try:
                 await self.client.wait_for_events(self.watched_events, path)
             except asyncio.CancelledError:
                 pass
             except Exception as e:
-                print('EXC is: {!r}'.format(e))
+                log.exception('Not handled in wait_for_events:')
+                print('Not handled: {!r}'.format(e))
                 raise

@@ -218,7 +218,8 @@ class Session(object):
                 self.retry_policy.clear(request)
                 raise
             except exc.ConnectError:
-                self.state.transition_to(States.SUSPENDED)
+                if self.state != States.SUSPENDED:
+                    self.state.transition_to(States.SUSPENDED)
             except Exception as e:
                 log.exception('Send exception: {}'.format(e))
                 self.retry_policy.clear(request)
@@ -245,7 +246,8 @@ class Session(object):
             zxid, _ = await asyncio.wait_for(self.conn.send(protocol.PingRequest()), timeout, loop=self.loop)
             self.last_zxid = zxid
         except (exc.ConnectError, asyncio.TimeoutError):
-            self.state.transition_to(States.SUSPENDED)
+            if self.state != States.SUSPENDED:
+                self.state.transition_to(States.SUSPENDED)
         except Exception as e:
             log.exception('in heartbeat: {}'.format(e))
             raise e

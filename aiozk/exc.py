@@ -36,6 +36,10 @@ class FailedRetry(ZKError):
     pass
 
 
+class InvalidStateTransition(ZKError):
+    pass
+
+
 response_error_xref = {}
 
 

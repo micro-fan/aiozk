@@ -2,8 +2,8 @@ import collections
 import logging
 
 import asyncio
-# from tornado import concurrent
 
+from aiozk import exc
 from .iterables import drain
 
 
@@ -39,7 +39,7 @@ class SessionStateMachine(object):
 
     def transition_to(self, state):
         if (self.current_state, state) not in self.valid_transitions:
-            raise RuntimeError(
+            raise exc.InvalidStateTransition(
                 "Invalid session state transition: %s -> %s" % (
                     self.current_state, state
                 )
@@ -70,3 +70,6 @@ class SessionStateMachine(object):
 
     def __ne__(self, state):
         return self.current_state != state
+
+    def __str__(self):
+        return '<SessionStateMachine {}>'.format(self.current_state)
