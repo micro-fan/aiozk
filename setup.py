@@ -18,7 +18,7 @@ setup(
     author_email='cybergrind@gmail.com',
     maintainer='Kirill Pinchuk',
     maintainer_email='cybergrind@gmail.com',
-    url='http://github.com/tipsi/aiozk',
+    url='http://github.com/micro-fan/aiozk',
     license='MIT',
     keywords=['zookeeper', 'asyncio', 'async'],
     packages=find_packages(
