@@ -39,3 +39,21 @@ async def test_shared_lock_timeout(zk, path):
     assert got_released
 
     await zk.deleteall(path)
+
+
+
+@pytest.mark.asyncio
+async def test_delete_unique_znode_on_timeout(zk, path):
+    lock = zk.recipes.SharedLock(path)
+    try:
+        # timeout -1 here to force a timeout error
+        await lock.wait_in_line('write', timeout=-1)
+    except TimeoutError:
+        pass
+
+    _, contenders = await lock.analyze_siblings()
+
+    # when we have a timeout error the contender must be deleted.
+    assert not contenders
+
+    await zk.delete(path)
