@@ -22,6 +22,7 @@ class BaseLock(SequentialRecipe):
 
         while True:
             if time_limit and time.time() >= time_limit:
+                await self.delete_unique_znode(znode_label)
                 raise exc.TimeoutError
 
             owned_positions, contenders = await self.analyze_siblings()
