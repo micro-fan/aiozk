@@ -1,4 +1,5 @@
 import collections
+import copy
 import logging
 
 import asyncio
@@ -64,6 +65,17 @@ class SessionStateMachine(object):
                 self.futures[state].add(f)
 
         return f
+
+    def remove_waiting(self, future, *states):
+        for state in states:
+            self.futures[state].remove(future)
+
+    def waitings(self, *states):
+        futures = {}
+        for state in states:
+            futures[state] = copy.copy(self.futures[state])
+
+        return futures
 
     def __eq__(self, state):
         return self.current_state == state
