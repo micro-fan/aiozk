@@ -1,5 +1,4 @@
 import asyncio
-import contextlib
 import logging
 import time
 
@@ -7,12 +6,10 @@ from aiozk import exc, states
 
 from .sequential import SequentialRecipe
 
-
 log = logging.getLogger(__name__)
 
 
 class BaseLock(SequentialRecipe):
-
     async def wait_in_line(self, znode_label, timeout=None, blocked_by=None):
         time_limit = None
         if timeout is not None:
@@ -52,21 +49,30 @@ class BaseLock(SequentialRecipe):
         def still_acquired():
             return state["acquired"]
 
+        state_fut = self.client.session.state.wait_for(states.States.LOST,
+                                                       loop=self.client.loop)
+
         async def handle_session_loss():
-            await self.client.session.state.wait_for(states.States.LOST, loop=self.client.loop)
+            await state_fut
             if not state["acquired"]:
                 return
 
             log.warning(
                 "Session expired at some point, lock %s no longer acquired.",
-                self
-            )
+                self)
             state["acquired"] = False
 
-        asyncio.ensure_future(handle_session_loss(), loop=self.client.loop)
+        fut = asyncio.ensure_future(handle_session_loss(),
+                                    loop=self.client.loop)
 
         async def on_exit():
             state["acquired"] = False
+            if not fut.done():
+                if not state_fut.done():
+                    self.client.session.state.remove_waiting(
+                        state_fut, states.States.LOST)
+                fut.cancel()
+
             await self.delete_unique_znode(znode_label)
 
         class Lock:
