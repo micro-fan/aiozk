@@ -1,5 +1,6 @@
 import asyncio
 import pytest
+from aiozk import states
 from aiozk.exc import TimeoutError
 
 
@@ -41,7 +42,6 @@ async def test_shared_lock_timeout(zk, path):
     await zk.deleteall(path)
 
 
-
 @pytest.mark.asyncio
 async def test_delete_unique_znode_on_timeout(zk, path):
     lock = zk.recipes.SharedLock(path)
@@ -55,5 +55,35 @@ async def test_delete_unique_znode_on_timeout(zk, path):
 
     # when we have a timeout error the contender must be deleted.
     assert not contenders
+
+    await zk.delete(path)
+
+
+def inspect_waiting_loss_handlers(zk, tag):
+    waitings = zk.session.state.waitings(
+        states.States.LOST)[states.States.LOST]
+    tasks = [task for task in asyncio.Task.all_tasks() if not task.done()]
+
+    print(f'({tag}) waitings={waitings}, len={len(waitings)}')
+    print(f'({tag}) tasks={tasks} len={len(tasks)}')
+
+    return waitings, tasks
+
+
+@pytest.mark.asyncio
+async def test_remove_session_loss_handler_after_lock_released(zk, path):
+    waitings_orig, tasks_orig = inspect_waiting_loss_handlers(zk, 'original')
+    lock = zk.recipes.SharedLock(path)
+    async with await lock.acquire_write():
+        waitings_locking, tasks_locking = inspect_waiting_loss_handlers(
+            zk, 'locking')
+
+    waitings_released, tasks_released = inspect_waiting_loss_handlers(
+        zk, 'released')
+
+    assert len(waitings_locking) > len(waitings_released)
+    assert len(waitings_orig) == len(waitings_released)
+    assert len(tasks_locking) > len(tasks_released)
+    assert len(tasks_orig) == len(tasks_released)
 
     await zk.delete(path)
