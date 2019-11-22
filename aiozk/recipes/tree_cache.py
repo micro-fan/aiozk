@@ -46,7 +46,7 @@ class TreeCache(Recipe):
         return self.root.as_dict()
 
 
-class ZNodeCache(object):
+class ZNodeCache:
 
     def __init__(self, path, defaults, client, data_watcher, child_watcher):
         self.path = path

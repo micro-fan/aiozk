@@ -14,7 +14,7 @@ from .transaction import Transaction
 log = logging.getLogger(__name__)
 
 
-class ZKClient(object):
+class ZKClient:
     def __init__(
         self,
         servers,

@@ -22,7 +22,7 @@ HEARTBEAT_FREQUENCY = 3  # heartbeats per timeout interval
 log = logging.getLogger(__name__)
 
 
-class Session(object):
+class Session:
 
     def __init__(self, servers, timeout, retry_policy, allow_read_only, read_timeout, loop=None):
         self.loop = loop or asyncio.get_event_loop()

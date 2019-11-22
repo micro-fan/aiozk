@@ -3,7 +3,7 @@
 from aiozk import exc
 
 
-class Recipe(object):
+class Recipe:
 
     sub_recipes = {}
 

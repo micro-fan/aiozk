@@ -11,7 +11,7 @@ from .iterables import drain
 log = logging.getLogger(__name__)
 
 
-class States(object):
+class States:
 
     CONNECTED = "connected"
     SUSPENDED = "suspended"
@@ -19,7 +19,7 @@ class States(object):
     LOST = "lost"
 
 
-class SessionStateMachine(object):
+class SessionStateMachine:
 
     valid_transitions = set([
         (States.LOST, States.CONNECTED),

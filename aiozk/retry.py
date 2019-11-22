@@ -11,7 +11,7 @@ from aiozk import exc
 log = logging.getLogger(__name__)
 
 
-class RetryPolicy(object):
+class RetryPolicy:
 
     def __init__(self, try_limit, sleep_func):
         self.try_limit = try_limit
