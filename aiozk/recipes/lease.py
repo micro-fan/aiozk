@@ -13,7 +13,7 @@ log = logging.getLogger(__name__)
 class Lease(SequentialRecipe):
 
     def __init__(self, base_path, limit=1):
-        super(Lease, self).__init__(base_path)
+        super().__init__(base_path)
         self.limit = limit
 
     async def obtain(self, duration):

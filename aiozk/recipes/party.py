@@ -9,7 +9,7 @@ class Party(SequentialRecipe):
     }
 
     def __init__(self, base_path, name):
-        super(Party, self).__init__(base_path)
+        super().__init__(base_path)
 
         self.name = name
         self.members = []

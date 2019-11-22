@@ -21,7 +21,7 @@ class Allocator(Recipe):
     def __init__(self, base_path, name, allocator_fn=None):
         self.name = name
 
-        super(Allocator, self).__init__(base_path)
+        super().__init__(base_path)
 
         if allocator_fn is None:
             allocator_fn = round_robin

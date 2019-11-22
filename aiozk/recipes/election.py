@@ -6,7 +6,7 @@ from .sequential import SequentialRecipe
 class LeaderElection(SequentialRecipe):
 
     def __init__(self, base_path):
-        super(LeaderElection, self).__init__(base_path)
+        super().__init__(base_path)
         self.has_leadership = False
 
         self.leadership_future = self.client.loop.create_future()

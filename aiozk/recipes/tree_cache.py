@@ -18,7 +18,7 @@ class TreeCache(Recipe):
     }
 
     def __init__(self, base_path, defaults=None):
-        super(TreeCache, self).__init__(base_path)
+        super().__init__(base_path)
         self.defaults = defaults or {}
 
         self.root = None

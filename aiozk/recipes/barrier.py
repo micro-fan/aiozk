@@ -8,7 +8,7 @@ from .recipe import Recipe
 class Barrier(Recipe):
 
     def __init__(self, path):
-        super(Barrier, self).__init__()
+        super().__init__()
         self.path = path
 
     async def create(self):
