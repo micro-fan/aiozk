@@ -2,6 +2,8 @@ import collections
 import copy
 import logging
 
+import asyncio
+
 from aiozk import exc
 from .iterables import drain
 
