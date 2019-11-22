@@ -19,7 +19,7 @@ class States:
 
 class SessionStateMachine:
 
-    valid_transitions = set([
+    valid_transitions = {
         (States.LOST, States.CONNECTED),
         (States.LOST, States.READ_ONLY),
         (States.CONNECTED, States.SUSPENDED),
@@ -30,7 +30,7 @@ class SessionStateMachine:
         (States.SUSPENDED, States.CONNECTED),
         (States.SUSPENDED, States.READ_ONLY),
         (States.SUSPENDED, States.LOST),
-    ])
+    }
 
     def __init__(self):
         self.current_state = States.LOST
