@@ -1,9 +1,7 @@
 import logging
-import asyncio
 
 from aiozk import exc
 
-from .data_watcher import DataWatcher
 from .recipe import Recipe
 
 

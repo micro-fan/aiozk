@@ -1,5 +1,3 @@
-# from tornado import gen
-
 from aiozk import exc
 
 

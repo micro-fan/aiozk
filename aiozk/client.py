@@ -8,8 +8,6 @@ from .recipes.proxy import RecipeProxy
 from .session import Session
 from .transaction import Transaction
 
-# from tornado import gen, concurrent
-
 
 log = logging.getLogger(__name__)
 

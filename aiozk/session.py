@@ -9,8 +9,6 @@ from .connection import Connection
 from .retry import RetryPolicy
 from .states import States, SessionStateMachine
 
-# from tornado import gen, ioloop
-
 
 DEFAULT_ZOOKEEPER_PORT = 2181
 

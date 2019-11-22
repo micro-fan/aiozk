@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import time
 
 from aiozk import exc, WatchEvent
 

@@ -7,7 +7,6 @@ from .recipe import Recipe
 from ..exc import NoNode
 
 
-
 log = logging.getLogger(__name__)
 
 

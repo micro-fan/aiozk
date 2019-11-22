@@ -1,5 +1,3 @@
-import asyncio
-
 from .children_watcher import ChildrenWatcher
 from .sequential import SequentialRecipe
 

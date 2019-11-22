@@ -3,8 +3,6 @@ import collections
 import logging
 import time
 
-# from tornado import gen
-
 from aiozk import exc
 
 
