@@ -49,8 +49,7 @@ class BaseLock(SequentialRecipe):
         def still_acquired():
             return state["acquired"]
 
-        state_fut = self.client.session.state.wait_for(states.States.LOST,
-                                                       loop=self.client.loop)
+        state_fut = self.client.session.state.wait_for(states.States.LOST)
 
         async def handle_session_loss():
             await state_fut

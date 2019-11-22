@@ -36,7 +36,7 @@ class LeaderElection(SequentialRecipe):
             return
 
         if timeout:
-            await asyncio.wait_for(self.leadership_future, timeout, loop=self.client.loop)
+            await asyncio.wait_for(self.leadership_future, timeout)
         else:
             await self.leadership_future
 

@@ -26,8 +26,8 @@ if payload_log.level == logging.NOTSET:
 
 class Connection:
 
-    def __init__(self, host, port, watch_handler, read_timeout, loop=None):
-        self.loop = loop or asyncio.get_event_loop()
+    def __init__(self, host, port, watch_handler, read_timeout, loop):
+        self.loop = loop
         self.host = host
         self.port = int(port)
 
@@ -178,8 +178,7 @@ class Connection:
         while remaining_size and (time() < end_time):
             remaining_time = end_time - time()
             done, pending = await asyncio.wait([self.reader.read(remaining_size)],
-                                                timeout=remaining_time,
-                                                loop=self.loop)
+                                                timeout=remaining_time)
             if done:
                 chunk = done.pop().result()
                 payload.append(chunk)

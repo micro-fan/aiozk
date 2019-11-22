@@ -34,7 +34,8 @@ class SessionStateMachine:
         (States.SUSPENDED, States.LOST),
     }
 
-    def __init__(self):
+    def __init__(self, session):
+        self.session = session
         self.current_state = States.LOST
         self.futures = collections.defaultdict(set)
 
@@ -54,9 +55,8 @@ class SessionStateMachine:
             if not future.done():
                 future.set_result(None)
 
-    def wait_for(self, *states, loop=None):
-        loop = loop or asyncio.get_event_loop()
-        f = loop.create_future()
+    def wait_for(self, *states):
+        f = self.session.loop.create_future()
 
         if self.current_state in states:
             f.set_result(None)

@@ -32,7 +32,7 @@ class Barrier(Recipe):
 
         try:
             if timeout:
-                await asyncio.wait_for(barrier_lifted, timeout, loop=self.client.loop)
+                await asyncio.wait_for(barrier_lifted, timeout)
             else:
                 await barrier_lifted
         except asyncio.TimeoutError:

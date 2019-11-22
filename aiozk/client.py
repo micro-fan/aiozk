@@ -31,7 +31,7 @@ class ZKClient:
             log.info("Using chroot '%s'", self.chroot)
 
         self.session = Session(
-            servers, session_timeout, retry_policy, allow_read_only, read_timeout, loop
+            servers, session_timeout, retry_policy, allow_read_only, read_timeout, loop=self.loop
         )
 
         self.default_acl = default_acl or [protocol.UNRESTRICTED_ACCESS]

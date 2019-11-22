@@ -81,14 +81,14 @@ class ZNodeCache:
                 self.client, self.data_watcher, self.child_watcher
             )
 
-        await asyncio.gather(*(child.start() for child in self.children.values()), loop=self.client.loop)
+        await asyncio.gather(*(child.start() for child in self.children.values()))
 
         self.data_watcher.add_callback(self.path, self.data_callback)
         self.child_watcher.add_callback(self.path, self.child_callback)
 
     async def stop(self):
         await asyncio.sleep(0.02)
-        await asyncio.gather(*(child.stop() for child in self.children.values()), loop=self.client.loop)
+        await asyncio.gather(*(child.stop() for child in self.children.values()))
         self.data_watcher.remove_callback(self.path, self.data_callback)
         self.child_watcher.remove_callback(self.path, self.child_callback)
 
@@ -109,7 +109,7 @@ class ZNodeCache:
                 self.path + "/" + added, self.defaults.get(added, {}),
                 self.client, self.data_watcher, self.child_watcher
             )
-        await asyncio.gather(*(self.children[added].start() for added in added_children), loop=self.client.loop)
+        await asyncio.gather(*(self.children[added].start() for added in added_children))
 
     async def data_callback(self, data):
         log.debug("New value for %s: %r", self.dot_path, data)
