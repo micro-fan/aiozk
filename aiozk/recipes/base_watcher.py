@@ -20,7 +20,7 @@ class BaseWatcher(Recipe):
     watched_events = []
 
     def __init__(self, *args, **kwargs):
-        super(BaseWatcher, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.callbacks = collections.defaultdict(set)
         self.loops = {}
 

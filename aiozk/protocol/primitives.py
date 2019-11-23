@@ -1,7 +1,7 @@
 import struct
 
 
-class Primitive(object):
+class Primitive:
     """
     The most basic structure of the protocol.  Subclassed, never used directly.
 

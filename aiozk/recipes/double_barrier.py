@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import time
 
 from aiozk import exc, WatchEvent
 
@@ -12,7 +11,7 @@ log = logging.getLogger(__name__)
 class DoubleBarrier(SequentialRecipe):
 
     def __init__(self, base_path, min_participants):
-        super(DoubleBarrier, self).__init__(base_path)
+        super().__init__(base_path)
         self.min_participants = min_participants
 
     @property

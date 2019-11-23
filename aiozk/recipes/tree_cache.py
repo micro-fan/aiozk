@@ -7,7 +7,6 @@ from .recipe import Recipe
 from ..exc import NoNode
 
 
-
 log = logging.getLogger(__name__)
 
 
@@ -19,7 +18,7 @@ class TreeCache(Recipe):
     }
 
     def __init__(self, base_path, defaults=None):
-        super(TreeCache, self).__init__(base_path)
+        super().__init__(base_path)
         self.defaults = defaults or {}
 
         self.root = None
@@ -46,7 +45,7 @@ class TreeCache(Recipe):
         return self.root.as_dict()
 
 
-class ZNodeCache(object):
+class ZNodeCache:
 
     def __init__(self, path, defaults, client, data_watcher, child_watcher):
         self.path = path

@@ -8,13 +8,11 @@ from .recipes.proxy import RecipeProxy
 from .session import Session
 from .transaction import Transaction
 
-# from tornado import gen, concurrent
-
 
 log = logging.getLogger(__name__)
 
 
-class ZKClient(object):
+class ZKClient:
     def __init__(
         self,
         servers,

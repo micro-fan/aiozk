@@ -5,7 +5,7 @@ ALL_FEATURES = {
 }
 
 
-class Features(object):
+class Features:
 
     def __init__(self, version_info):
         for feature_name, version_introduced in ALL_FEATURES.items():

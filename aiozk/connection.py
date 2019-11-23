@@ -7,8 +7,6 @@ import sys
 from time import time
 from contextlib import suppress
 
-# from tornado import ioloop, iostream, gen, concurrent, tcpclient
-
 from aiozk import protocol, iterables, exc
 
 DEFAULT_READ_TIMEOUT = 3

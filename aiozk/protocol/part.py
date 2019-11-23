@@ -3,7 +3,7 @@ import operator
 from .primitives import Primitive
 
 
-class Part(object):
+class Part:
     """
     Composable building block used to define Zookeeper protocol parts.
 

@@ -1,9 +1,7 @@
-# from tornado import gen
-
 from aiozk import protocol
 
 
-class Transaction(object):
+class Transaction:
 
     def __init__(self, client):
         self.client = client
@@ -71,7 +69,7 @@ class Transaction(object):
         return result
 
 
-class Result(object):
+class Result:
 
     def __init__(self):
         self.checked = set()

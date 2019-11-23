@@ -31,8 +31,8 @@ class TransactionRequest(Request):
     """
     opcode = 14
 
-    def __init__(self, *args, **kwargs):
-        super(TransactionRequest, self).__init__(*args, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.requests = []
 
     def add(self, request):
@@ -78,8 +78,8 @@ class TransactionResponse(Response):
     """
     opcode = 14
 
-    def __init__(self, *args, **kwargs):
-        super(TransactionResponse, self).__init__(*args, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.responses = []
 
     @classmethod

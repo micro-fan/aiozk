@@ -16,7 +16,7 @@ sequential_re = re.compile(r'.*[0-9]{10}$')
 class SequentialRecipe(Recipe):
 
     def __init__(self, base_path):
-        super(SequentialRecipe, self).__init__(base_path)
+        super().__init__(base_path)
         self.guid = uuid.uuid4().hex
 
         self.owned_paths = {}

@@ -22,7 +22,7 @@ RECIPES = {
     'allocator': 'Allocator',
 }
 
-class RecipeClassProxy(object):
+class RecipeClassProxy:
 
     def __init__(self, client, recipe_class):
         self.client = client
@@ -34,7 +34,7 @@ class RecipeClassProxy(object):
         return recipe
 
 
-class RecipeProxy(object):
+class RecipeProxy:
 
     def __init__(self, client):
         self.client = client
