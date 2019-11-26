@@ -8,7 +8,7 @@ import time
 import glob
 
 from aiozk import ZKClient
-from tipsi_tools.unix import succ, wait_socket
+from fan_tools.unix import succ, wait_socket
 
 
 MYIP = socket.gethostbyname(socket.gethostname())
@@ -57,11 +57,12 @@ def write_dyn_cfg(myid, myip, others=None):
         printe('CONFIG: {}\n\n'.format(f.read()))
     if others:
         init(myid)
-        succ(['/opt/zookeeper/bin/zkServer.sh start'], False)
+        succ(['/opt/zookeeper/bin/zkServer.sh start'])
         cfg = pat(myid=myid, myip=myip, role='participant')
         seed = os.environ.get('ZK_SEED')
+        wait_socket('localhost', 2181)
         printe('Reconfiguring...')
-        succ([RECONF(seed=seed, cfg=cfg)])
+        succ([RECONF(seed=seed, cfg=cfg)], check_stderr=True)
 
 BASE = '/zk_start/id/'
 LOCK = '/zk_start/lock'
@@ -125,7 +126,7 @@ async def dyn_cfg(seed):
             printe('EXCEPTION: {}'.format(e))
             if locked:
                 printe('LOCKED BREAK')
-                break
+                exit(1)
             printe('retry')
     printe('eternal loop')
     while 1:

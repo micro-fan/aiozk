@@ -1,8 +1,8 @@
-FROM tipsi/base_python:1.0.8
+FROM fan0/python:2.1.0
 
 WORKDIR /code
 
-RUN pip3 install pytest==3.6.* pytest-asyncio asynctest
+RUN pip3 install fan_tools pytest-asyncio asynctest
 RUN apt install -y tcpdump
 
 ADD . /code

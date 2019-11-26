@@ -6,17 +6,17 @@ services:
       context: .
       dockerfile: ./docker/zookeeper.dockerfile
     container_name: aiozk_zk_seed  # prevent scaling seed zk
-    image: tipsi_zookeeper:latest
+    image: fan_zookeeper:latest
 
   zk:
-    image: tipsi_zookeeper:latest
+    image: fan_zookeeper:latest
     environment:
       - ZK_SEED=zk_seed
     #  - ZOO_LOG4J_PROP=DEBUG,ROLLINGFILE
 
   diag:
     build: .
-    command: ./diag.py
+    command: bash -c 'fan_wait zk 2181 && ./diag.py'
     volumes:
       - .:/code
     depends_on:
@@ -24,7 +24,7 @@ services:
 
   aiozk:
     build: .
-    command: /bin/bash -c 'python3 setup.py install && pytest'
+    command: /bin/bash -c 'python3 setup.py install && fan_wait zk 2181 && pytest'
     environment:
       - PYTHONPATH=.
     volumes:
