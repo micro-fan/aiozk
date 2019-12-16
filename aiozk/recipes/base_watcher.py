@@ -43,6 +43,7 @@ class BaseWatcher(Recipe):
     async def watch_loop(self, path):
         while self.callbacks[path]:
             log.debug("Fetching data for %s", path)
+            watch_future = self.client.wait_for_events(self.watched_events, path)
             try:
                 result = await self.fetch(path)
             except exc.NoNode:
@@ -61,7 +62,7 @@ class BaseWatcher(Recipe):
             if WatchEvent.CREATED not in self.watched_events and result == exc.NoNode:
                 return
             try:
-                await self.client.wait_for_events(self.watched_events, path)
+                await watch_future
             except asyncio.CancelledError:
                 pass
             except Exception as e:
