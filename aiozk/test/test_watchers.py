@@ -6,6 +6,7 @@ import pytest
 
 from .. import WatchEvent
 from ..exc import NoNode
+from ..recipes.data_watcher import DataWatcher
 
 
 @pytest.fixture
@@ -261,3 +262,54 @@ async def test_multi_watcher(zk, path):
 
     assert len(out) == num * 2
     await zk.deleteall(path)
+
+
+@pytest.mark.asyncio
+async def test_data_watcher_no_race_condition(zk, path):
+    """
+    Ensure that there is no race condition between a task setting watch-events
+    and a task waiting watch-events.
+
+    A watch-event can be triggered right after it is set on a znode while there
+    are no callbacks for the event so that the event is ignored quietly. And
+    then a successive call to wait for watch-event will never be finished.
+    """
+
+    class DelayedDataWatcher(DataWatcher):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+
+        async def fetch(self, path):
+            await super().fetch(path)
+            await asyncio.sleep(0.2)
+
+    await zk.create(path)
+    data_watcher = DelayedDataWatcher()
+    data_watcher.set_client(zk)
+
+    async def callback(d):
+        await asyncio.sleep(0)
+
+    data_watcher.add_callback(path, callback)
+    await asyncio.sleep(0.1)
+
+    await zk.set_data(path, uuid.uuid4().hex)
+    await asyncio.sleep(1)
+
+    ready = asyncio.Event()
+
+    def set_ready(_):
+        ready.set()
+
+    data_watcher.add_callback(path, set_ready)
+    await zk.set_data(path, uuid.uuid4().hex)
+
+    await asyncio.wait_for(ready.wait(), timeout=1)
+    assert ready.is_set()
+
+    data_watcher.remove_callback(path, set_ready)
+    data_watcher.remove_callback(path, callback)
+
+    await asyncio.sleep(0.2)
+
+    await zk.delete(path)
