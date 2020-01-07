@@ -3,7 +3,7 @@ import logging
 import re
 import uuid
 
-from aiozk import exc, WatchEvent
+from aiozk import exc, WatchEvent, RetryPolicy, states
 
 from .recipe import Recipe
 
@@ -42,6 +42,11 @@ class SequentialRecipe(Recipe):
             created_path = await self.client.create(
                 path, data=data, ephemeral=True, sequential=True
             )
+        except Exception as e:
+            asyncio.create_task(self.delete_garbage_znodes(znode_label))
+
+            log.exception('Exception in create_unique_znode')
+            raise e
 
         self.owned_paths[znode_label] = created_path
 
@@ -52,9 +57,7 @@ class SequentialRecipe(Recipe):
             pass
 
     async def analyze_siblings(self):
-        siblings = await self.client.get_children(self.base_path)
-        siblings = [name for name in siblings if sequential_re.match(name)]
-
+        siblings = await self.get_siblings()
         siblings.sort(key=self.sequence_number)
 
         owned_positions = {}
@@ -63,6 +66,30 @@ class SequentialRecipe(Recipe):
             if self.guid in path:
                 owned_positions[self.determine_znode_label(path)] = index
         return (owned_positions, siblings)
+
+    async def get_siblings(self):
+        siblings = await self.client.get_children(self.base_path)
+        siblings = [name for name in siblings if sequential_re.match(name)]
+        return siblings
+
+    async def delete_garbage_znodes(self, znode_label):
+        MAXIMUM_WAIT = 60
+        retry_policy = RetryPolicy.exponential_backoff(maximum=MAXIMUM_WAIT)
+        while True:
+            await self.client.session.state.wait_for(states.States.CONNECTED)
+            await retry_policy.enforce()
+            try:
+                siblings = await self.get_siblings()
+                for sibling in siblings:
+                    if self.guid in sibling and self.determine_znode_label(
+                            sibling) == znode_label:
+                        path = self.sibling_path(sibling)
+                        if path != self.owned_paths.get(znode_label, ''):
+                            await self.client.delete(path)
+
+                break
+            except Exception:
+                log.exception('Exception in delete_garbage_znodes:')
 
     async def wait_on_sibling(self, sibling, timeout=None):
         log.debug("Waiting on sibling %s", sibling)
