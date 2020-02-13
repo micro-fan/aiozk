@@ -333,5 +333,7 @@ class Session:
             self.state.transition_to(States.LOST)
         if self.conn:
             await self.conn.close(self.timeout)
+        if self.heartbeat_handle:
+            self.heartbeat_handle.cancel()
         self.closing = False
         self.started = False
