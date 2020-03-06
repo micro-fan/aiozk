@@ -18,13 +18,6 @@ async def test_creation_failure_deadlock(zk, path):
         await asyncio.sleep(1)
         zk.session.state.transition_to(States.SUSPENDED)
 
-    async def create(self, *args, **kwargs):
-        await self.create_orig(*args, **kwargs)
-        # SHOULD NOT REACH HERE
-
-    zk.create_orig = zk.create
-    zk.create = types.MethodType(create, zk)
-
     zk.session.conn.read_loop_task.cancel()
     zk.session.conn.read_loop_task = None
     # wait for that read loop task is cancelled
@@ -33,13 +26,13 @@ async def test_creation_failure_deadlock(zk, path):
     asyncio.create_task(change_state())
     lock_acquired = False
     with pytest.raises(TimeoutError):
+        # lock is created at zookeeper but response can not be returned because
+        # read loop task was cancelled.
         async with await lock.acquire(timeout=2):
             lock_acquired = True
 
     assert not lock_acquired
     assert not lock.owned_paths
-
-    zk.create = zk.create_orig
 
     lock2 = zk.recipes.Lock(path)
     try:
