@@ -22,7 +22,13 @@ class BaseLock(SequentialRecipe):
                 await self.delete_unique_znode(znode_label)
                 raise exc.TimeoutError
 
-            owned_positions, contenders = await self.analyze_siblings()
+            try:
+                owned_positions, contenders = await self.analyze_siblings()
+            except exc.TimeoutError:
+                # state may change to SUSPENDED
+                await self.client.session.state.wait_for(states.States.CONNECTED)
+                continue
+
             if znode_label not in owned_positions:
                 raise exc.SessionLost
 
@@ -39,7 +45,9 @@ class BaseLock(SequentialRecipe):
             try:
                 await self.wait_on_sibling(blockers[-1], timeout)
             except exc.TimeoutError:
-                await self.delete_unique_znode(znode_label)
+                # state may change to SUSPENDED
+                await self.client.session.state.wait_for(states.States.CONNECTED)
+                continue
 
         return self.make_contextmanager(znode_label)
 
