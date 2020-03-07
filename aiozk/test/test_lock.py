@@ -42,3 +42,39 @@ async def test_creation_failure_deadlock(zk, path):
         assert lock_acquired
     finally:
         await zk.deleteall(path)
+
+
+@pytest.mark.asyncio
+async def test_acquisition_failure_deadlock(zk, path):
+    lock = zk.recipes.Lock(path)
+    await lock.ensure_path()
+
+    async with await lock.acquire(timeout=0.5):
+        lock2 = zk.recipes.Lock(path)
+        await lock2.ensure_path()
+
+        lock2.analyze_siblings_orig = lock2.analyze_siblings
+        # analyze_siblings() is called by .wait_in_line()
+        async def analyze_siblings_fail(self):
+            await self.analyze_siblings_orig()
+            raise TimeoutError('fail', 1234)
+
+        lock2.analyze_siblings = types.MethodType(analyze_siblings_fail, lock2)
+
+        lock_acquired = False
+        with pytest.raises(TimeoutError):
+            async with await lock2.acquire(timeout=0.5):
+                lock_acquired = True
+
+        assert not lock_acquired
+
+    try:
+        lock3 = zk.recipes.Lock(path)
+        await lock.ensure_path()
+        lock_acquired2 = False
+        async with await lock3.acquire(timeout=0.5):
+            lock_acquired2 = True
+
+        assert lock_acquired2
+    finally:
+        await zk.deleteall(path)
