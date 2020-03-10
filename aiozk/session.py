@@ -205,6 +205,11 @@ class Session:
 
             try:
                 self.xid += 1
+                if self.xid > 0x7fffffff:
+                    # xid should not exceed the maximum of 32 bit signed integer
+                    # and it should be positive value because a few negative
+                    # values are special xid.
+                    self.xid = 1
                 zxid, response = await self.conn.send(request, xid=self.xid)
                 self.last_zxid = zxid
                 self.set_heartbeat()
