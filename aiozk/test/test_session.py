@@ -162,3 +162,18 @@ async def test_send_good_case(session):
     session.retry_policy.clear.assert_called_once_with(req)
     session.conn.send.assert_called_once()
     session.set_heartbeat.assert_called_once_with()
+
+
+@pytest.mark.asyncio
+async def test_cxid_rollover(zk, path):
+    zk.session.xid = 0x7fffffff - 10
+
+    try:
+        await zk.create(path)
+        for _ in range(20):
+            await zk.set_data(path, '')
+    finally:
+        await zk.deleteall(path)
+
+    assert zk.session.xid < 0x7fffffff
+    assert zk.session.xid > 0
