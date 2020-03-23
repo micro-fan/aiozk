@@ -42,6 +42,8 @@ class BaseLock(SequentialRecipe):
             if not blockers:
                 break
 
+            if time_limit is not None:
+                timeout = time_limit - time.time()
             try:
                 await self.wait_on_sibling(blockers[-1], timeout)
             except exc.TimeoutError:
