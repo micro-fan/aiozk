@@ -92,3 +92,26 @@ async def test_many_waiters(zk, path):
     asyncio.wait_for(drain(), timeout=5)
 
     assert pass_barrier == WORKER_NUM
+
+
+@pytest.mark.asyncio
+async def test_wait_before_create(zk, path):
+    """await barrier.wait() should finish immediately if the barrier does not
+    exist. Because it is semantically right: No barrier, no blocking.
+    """
+    wait_finished = False
+
+    async def start_worker():
+        barrier = zk.recipes.Barrier(path)
+        await barrier.wait()
+        nonlocal wait_finished
+        wait_finished = True
+
+    task = asyncio.create_task(start_worker())
+
+    try:
+        await asyncio.wait_for(task, timeout=2)
+    except asyncio.TimeoutError:
+        pass
+
+    assert wait_finished
