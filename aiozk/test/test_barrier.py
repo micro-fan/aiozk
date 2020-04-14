@@ -67,3 +67,50 @@ async def test_wait_before_create(zk, path):
         pass
 
     assert wait_finished
+
+@pytest.mark.asyncio
+async def test_many_waiters(zk, path):
+    """Test for many waiters"""
+
+    WORKER_NUM = 1000
+    worker_cnt = 0
+    pass_barrier = 0
+    cond = asyncio.Condition()
+
+    async def start_worker():
+        barrier = zk.recipes.Barrier(path)
+        nonlocal worker_cnt
+        worker_cnt += 1
+        async with cond:
+            cond.notify()
+
+        await barrier.wait()
+
+        nonlocal pass_barrier
+        pass_barrier += 1
+        worker_cnt -= 1
+        async with cond:
+            cond.notify()
+
+    barrier = zk.recipes.Barrier(path)
+    await barrier.create()
+
+    for _ in range(WORKER_NUM):
+        asyncio.create_task(start_worker())
+
+    async with cond:
+        await cond.wait_for(lambda: worker_cnt == WORKER_NUM)
+
+    await asyncio.sleep(1)
+    # Make sure that all workers are blocked at .wait() coroutines. And no one
+    # passed beyond the barrier until now.
+    assert pass_barrier == 0
+    await barrier.lift()
+
+    async def drain():
+        async with cond:
+            await cond.wait_for(lambda: worker_cnt == 0)
+
+    asyncio.wait_for(drain(), timeout=5)
+
+    assert pass_barrier == WORKER_NUM

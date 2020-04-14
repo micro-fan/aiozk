@@ -1,6 +1,8 @@
 import asyncio
+import asynctest
 import logging
 import pytest
+import time
 import types
 
 from aiozk.exc import TimeoutError
@@ -78,3 +80,32 @@ async def test_acquisition_failure_deadlock(zk, path):
         assert lock_acquired2
     finally:
         await zk.deleteall(path)
+
+
+@pytest.mark.asyncio
+async def test_timeout_accuracy(zk, path):
+    lock = zk.recipes.Lock(path)
+
+    async with await lock.acquire():
+        lock2 = zk.recipes.Lock(path)
+        analyze_siblings = lock2.analyze_siblings
+        lock2.analyze_siblings = asynctest.CoroutineMock()
+
+        async def slow_analyze():
+            await asyncio.sleep(0.5)
+            return await analyze_siblings()
+
+        lock2.analyze_siblings.side_effect = slow_analyze
+
+        acquired = False
+        start = time.perf_counter()
+        with pytest.raises(TimeoutError):
+            async with await lock2.acquire(timeout=0.5):
+                acquired = True
+
+        elapsed = time.perf_counter() - start
+
+    await zk.deleteall(path)
+
+    assert not acquired
+    assert elapsed < 1
