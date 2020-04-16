@@ -1,6 +1,7 @@
 import asyncio
-
 import pytest
+
+from aiozk import exc
 
 
 @pytest.mark.asyncio
@@ -12,7 +13,7 @@ async def test_barrier(zk, path):
         barrier = zk.recipes.Barrier(path)
         is_worker_started.set_result('ok')
         await barrier.wait()
-        assert is_lifted == True
+        assert is_lifted is True
 
     barrier = zk.recipes.Barrier(path)
     await barrier.create()
@@ -115,3 +116,17 @@ async def test_wait_before_create(zk, path):
         pass
 
     assert wait_finished
+
+
+@pytest.mark.asyncio
+async def test_double_barrier_timeout(zk, path):
+    entered = False
+    MIN_WORKERS = 10
+    barrier = zk.recipes.DoubleBarrier(path, MIN_WORKERS)
+    with pytest.raises(exc.TimeoutError):
+        await barrier.enter(timeout=0.5)
+        entered = True
+
+    assert not entered
+
+    await zk.deleteall(path)
