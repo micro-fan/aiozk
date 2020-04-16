@@ -107,3 +107,30 @@ async def test_double_barrier_timeout(zk, path):
 
     await zk.deleteall(path)
 
+
+@pytest.mark.asyncio
+async def test_double_barrier_enter_leakage(zk, path):
+    enter_count = 0
+    MIN_WORKERS = 8
+
+    async def start_worker():
+        nonlocal enter_count
+        barrier = zk.recipes.DoubleBarrier(path, MIN_WORKERS)
+        await barrier.enter(timeout=0.5)
+        enter_count += 1
+
+    with pytest.raises(exc.TimeoutError):
+        await start_worker()
+
+    assert enter_count == 0
+
+    try:
+        with pytest.raises(exc.TimeoutError):
+            await asyncio.gather(
+                *[start_worker() for _ in range(MIN_WORKERS - 1)])
+
+        assert enter_count == 0
+        assert len(await zk.get_children(path)) == 0
+    finally:
+        await zk.deleteall(path)
+
