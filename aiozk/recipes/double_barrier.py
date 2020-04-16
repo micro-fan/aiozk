@@ -26,24 +26,29 @@ class DoubleBarrier(SequentialRecipe):
 
         exists = await self.client.exists(path=self.sentinel_path, watch=True)
 
-        await self.create_unique_znode("worker")
-
-        _, participants = await self.analyze_siblings()
+        ZNODE_LABEL = 'worker'
+        await self.create_unique_znode(ZNODE_LABEL)
 
         if exists:
             return
 
-        elif len(participants) >= self.min_participants:
-            await self.create_znode(self.sentinel_path)
-            return
-
         try:
-            if timeout:
-                await asyncio.wait_for(barrier_lifted, timeout)
-            else:
-                await barrier_lifted
-        except asyncio.TimeoutError:
-            raise exc.TimeoutError
+            _, participants = await self.analyze_siblings()
+
+            if len(participants) >= self.min_participants:
+                await self.create_znode(self.sentinel_path)
+                return
+
+            try:
+                if timeout:
+                    await asyncio.wait_for(barrier_lifted, timeout)
+                else:
+                    await barrier_lifted
+            except asyncio.TimeoutError:
+                raise exc.TimeoutError
+        except Exception:
+            await self.delete_unique_znode_retry(ZNODE_LABEL)
+            raise
 
     async def leave(self, timeout=None):
         log.debug("Leaving double barrier %s", self.base_path)

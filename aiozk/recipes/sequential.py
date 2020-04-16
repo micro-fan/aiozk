@@ -56,6 +56,19 @@ class SequentialRecipe(Recipe):
         except exc.NoNode:
             pass
 
+    async def delete_unique_znode_retry(self, znode_label):
+        MAXIMUM_WAIT = 60
+        retry_policy = RetryPolicy.exponential_backoff(maximum=MAXIMUM_WAIT)
+        while True:
+            try:
+                await retry_policy.enforce()
+                await self.client.session.state.wait_for(
+                    states.States.CONNECTED)
+                await self.delete_unique_znode(znode_label)
+                break
+            except Exception:
+                log.exception('Exception in delete_unique_znode_retry')
+
     async def analyze_siblings(self):
         siblings = await self.get_siblings()
         siblings.sort(key=self.sequence_number)
