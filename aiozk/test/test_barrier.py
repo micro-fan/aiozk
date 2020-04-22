@@ -1,7 +1,6 @@
 import asyncio
-import pytest
 
-from aiozk import exc
+import pytest
 
 
 @pytest.mark.asyncio
@@ -13,7 +12,7 @@ async def test_barrier(zk, path):
         barrier = zk.recipes.Barrier(path)
         is_worker_started.set_result('ok')
         await barrier.wait()
-        assert is_lifted is True
+        assert is_lifted == True
 
     barrier = zk.recipes.Barrier(path)
     await barrier.create()
@@ -46,6 +45,28 @@ async def test_double_barrier(zk, path):
     await asyncio.wait(workers)
     await zk.delete(path)
 
+
+@pytest.mark.asyncio
+async def test_wait_before_create(zk, path):
+    """await barrier.wait() should finish immediately if the barrier does not
+    exist. Because it is semantically right: No barrier, no blocking.
+    """
+    wait_finished = False
+
+    async def start_worker():
+        barrier = zk.recipes.Barrier(path)
+        await barrier.wait()
+        nonlocal wait_finished
+        wait_finished = True
+
+    task = asyncio.create_task(start_worker())
+
+    try:
+        await asyncio.wait_for(task, timeout=2)
+    except asyncio.TimeoutError:
+        pass
+
+    assert wait_finished
 
 @pytest.mark.asyncio
 async def test_many_waiters(zk, path):
@@ -90,47 +111,6 @@ async def test_many_waiters(zk, path):
         async with cond:
             await cond.wait_for(lambda: worker_cnt == 0)
 
-    asyncio.wait_for(drain(), timeout=5)
+    await asyncio.wait_for(drain(), timeout=5)
 
     assert pass_barrier == WORKER_NUM
-
-
-async def test_double_barrier_timeout(zk, path):
-    entered = False
-    MIN_WORKERS = 10
-    barrier = zk.recipes.DoubleBarrier(path, MIN_WORKERS)
-    with pytest.raises(exc.TimeoutError):
-        await barrier.enter(timeout=0.5)
-        entered = True
-
-    assert not entered
-
-    await zk.deleteall(path)
-
-
-@pytest.mark.asyncio
-async def test_double_barrier_enter_leakage(zk, path):
-    enter_count = 0
-    MIN_WORKERS = 8
-
-    async def start_worker():
-        nonlocal enter_count
-        barrier = zk.recipes.DoubleBarrier(path, MIN_WORKERS)
-        await barrier.enter(timeout=0.5)
-        enter_count += 1
-
-    with pytest.raises(exc.TimeoutError):
-        await start_worker()
-
-    assert enter_count == 0
-
-    try:
-        with pytest.raises(exc.TimeoutError):
-            await asyncio.gather(
-                *[start_worker() for _ in range(MIN_WORKERS - 1)])
-
-        assert enter_count == 0
-        assert len(await zk.get_children(path)) == 0
-    finally:
-        await zk.deleteall(path)
-
