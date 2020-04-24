@@ -31,7 +31,7 @@ def session(event_loop):
 
 def prepare_repair_loop_callback_done_future(session):
     """Creates future that Awaits for session.repair_loop_task to be completed and returns value of session.closing"""
-    future = asyncio.Future()
+    future = session.loop.create_future()
     repair_loop_task = session.repair_loop_task
 
     def set_result(_):

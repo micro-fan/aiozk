@@ -7,7 +7,7 @@ from aiozk import exc
 @pytest.mark.asyncio
 async def test_barrier(zk, path):
     is_lifted = False
-    is_worker_started = asyncio.Future()
+    is_worker_started = zk.loop.create_future()
 
     async def start_worker():
         barrier = zk.recipes.Barrier(path)
@@ -18,7 +18,7 @@ async def test_barrier(zk, path):
     barrier = zk.recipes.Barrier(path)
     await barrier.create()
 
-    worker = asyncio.ensure_future(start_worker())
+    worker = asyncio.ensure_future(start_worker(), loop=zk.loop)
     is_ok = await is_worker_started
     assert is_ok == 'ok'
 
@@ -42,8 +42,9 @@ async def test_double_barrier(zk, path):
     target = 8
     for _ in range(target):
         num_workers += 1
-        workers.append(asyncio.ensure_future(start_worker(target)))
-    await asyncio.wait(workers)
+        workers.append(
+            asyncio.ensure_future(start_worker(target), loop=zk.loop))
+    await asyncio.wait(workers, loop=zk.loop)
     await zk.delete(path)
 
 
