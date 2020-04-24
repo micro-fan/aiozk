@@ -90,7 +90,7 @@ async def test_many_waiters(zk, path):
         async with cond:
             await cond.wait_for(lambda: worker_cnt == 0)
 
-    asyncio.wait_for(drain(), timeout=5)
+    await asyncio.wait_for(drain(), timeout=5)
 
     assert pass_barrier == WORKER_NUM
 
