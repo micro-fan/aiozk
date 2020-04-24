@@ -34,7 +34,7 @@ async def test_close_cancels_read_loop_task(connection):
     connection.start_read_loop()
     connection.read_response = asynctest.CoroutineMock(return_value=(0, asynctest.ANY, asynctest.ANY))
 
-    task_cancelled_future = asyncio.Future()
+    task_cancelled_future = connection.loop.create_future()
 
     def set_result(task):
         task_cancelled_future.set_result(task.cancelled())
