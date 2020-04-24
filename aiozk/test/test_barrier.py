@@ -135,7 +135,7 @@ async def test_double_barrier_timeout(zk, path):
 @pytest.mark.asyncio
 async def test_double_barrier_enter_leakage(zk, path):
     enter_count = 0
-    MIN_WORKERS = 8
+    MIN_WORKERS = 32
 
     async def start_worker():
         nonlocal enter_count
@@ -149,10 +149,11 @@ async def test_double_barrier_enter_leakage(zk, path):
     assert enter_count == 0
 
     try:
-        with pytest.raises(exc.TimeoutError):
-            await asyncio.gather(
-                *[start_worker() for _ in range(MIN_WORKERS - 1)])
+        results = await asyncio.gather(
+            *[start_worker() for _ in range(MIN_WORKERS - 1)],
+            return_exceptions=True)
 
+        assert all([isinstance(x, exc.TimeoutError) for x in results])
         assert enter_count == 0
         assert len(await zk.get_children(path)) == 0
     finally:
