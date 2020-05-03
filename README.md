@@ -1,15 +1,33 @@
-# Asyncio zookeeper client
+# Asyncio zookeeper client (aiozk)
 
 [![PyPi version](https://img.shields.io/pypi/v/aiozk.svg)](https://pypi.python.org/pypi/aiozk)
 [![Build Status](https://travis-ci.org/micro-fan/aiozk.svg?branch=master)](https://travis-ci.org/micro-fan/aiozk)
 
+<!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
+**Table of Contents**
 
-**Based on [wglass/zoonado](https://github.com/wglass/zoonado/tree/master/zoonado) implementation**
+- [Asyncio zookeeper client (aiozk)](#asyncio-zookeeper-client-aiozk)
+    - [Status](#status)
+    - [Installation](#installation)
+    - [Quick Example](#quick-example)
+    - [Recipes](#recipes)
+        - [Caution](#caution)
+    - [Testing](#testing)
+        - [Run tests](#run-tests)
+        - [Testing approach](#testing-approach)
+        - [Recipes testing](#recipes-testing)
+        - [Run some tests directly](#run-some-tests-directly)
+    - [References](#references)
+
+<!-- markdown-toc end -->
+
 
 ## Status
 
-Have no major bugs in client/session/connection, but recipes are just ported and require more tests.
-So you can expect that recipes with tests are working.
+Have no major bugs in client/session/connection, but recipes need more test
+code to become more robust.
+
+Any help and interest are welcome 😀
 
 ## Installation
 
@@ -25,15 +43,14 @@ import asyncio
 from aiozk import ZKClient
 
 
-async def run():
+async def main():
     zk = ZKClient('localhost')
     await zk.start()
     await zk.create('/foo', data=b'bazz', ephemeral=True)
-    await zk.set_data('/foo', 'new bazz')
+    assert b'bazz' == await zk.get_data('/foo')
     await zk.close()
 
-loop = asyncio.get_event_loop()
-loop.run_until_complete(run())
+asyncio.run(main())
 ```
 
 ## Recipes
@@ -43,16 +60,37 @@ You may use recipes, similar to zoonado, kazoo, and other libs:
 ```python
 # assuming zk is aiozk.ZKClient
 
-barrier = zk.recipes.Barrier('/barrier_name')
+# Lock
+async with await zk.recipes.Lock('/path/to/lock').acquire():
+    # ... Do some stuff ...
+    pass
+
+# Barrier
+barrier = zk.recipes.Barrier('/path/to/barrier)
 await barrier.create()
 await barrier.lift()
 await barrier.wait()
+
+# DoubleBarrier
+double_barrier = zk.recipes.DoubleBarrier('/path/to/double/barrier', min_participants=4)
+await double_barrier.enter(timeout=0.5)
+# ...  Do some stuff ...
+await double_barrier.leave(timeout=0.5)
 ```
 
-[Full list of recipes](https://github.com/tipsi/aiozk/tree/master/aiozk/recipes)
+You can find full list of recipes provided by aiozk here:
+[aiozk recipes](https://github.com/micro-fan/aiozk/tree/master/aiozk/recipes)
 
-To understand ideas behind recipes [please read this](https://zookeeper.apache.org/doc/trunk/recipes.html) and [even more recipes here](http://curator.apache.org/curator-recipes/index.html). Make sure you're familiar with all recipes before doing something new by yourself, especially when it involves more than few zookeeper calls.
+To understand ideas behind recipes [please read
+this](https://zookeeper.apache.org/doc/current/recipes.html) and [even more
+recipes here](http://curator.apache.org/curator-recipes/index.html). Make sure
+you're familiar with all recipes before doing something new by yourself,
+especially when it involves more than few zookeeper calls.
 
+### Caution
+Don't mix different type of recipes at the same znode path. For example,
+creating a Lock and a DoubleBarrier object at the same path. It may cause
+undefined behavior 😓
 
 ## Testing
 
@@ -131,3 +169,21 @@ It seems that usually recipes require several things to be tested:
 
 * That recipe flow is working as expected
 * Timeouts: reproduce every timeout with meaningful values (timeout 0.5s and block for 0.6s)
+
+
+### Run some tests directly
+
+Another way to run tests only which you are interested in quickly. Or this is
+useful when you run tests under the other version of python.
+
+```sh
+# Run zookeeper container
+docker run -p 2181:2181 zookeeper
+
+# Run pytest directly at the development source tree
+export ZK_HOST=localhost
+pytest -s --log-cli-level=DEBUG aiozk/test/test_barrier.py
+```
+
+## References
+* It is based on [wglass/zoonado](https://github.com/wglass/zoonado/tree/master/zoonado) implementation
