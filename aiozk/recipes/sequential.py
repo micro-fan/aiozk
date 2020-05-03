@@ -14,6 +14,7 @@ sequential_re = re.compile(r'.*[0-9]{10}$')
 
 
 class SequentialRecipe(Recipe):
+    """Can have multiple znodes with different labels"""
 
     def __init__(self, base_path):
         super().__init__(base_path)
@@ -31,6 +32,10 @@ class SequentialRecipe(Recipe):
         return "/".join([self.base_path, path])
 
     async def create_unique_znode(self, znode_label, data=None):
+        if znode_label in self.owned_paths:
+            if await self.client.exists(self.owned_paths[znode_label]):
+                raise exc.NodeExists
+
         path = self.sibling_path(znode_label + "-" + self.guid + "-")
 
         try:
@@ -56,6 +61,8 @@ class SequentialRecipe(Recipe):
         except exc.NoNode:
             pass
 
+        self.owned_paths.pop(znode_label)
+
     async def delete_unique_znode_retry(self, znode_label):
         MAXIMUM_WAIT = 60
         retry_policy = RetryPolicy.exponential_backoff(maximum=MAXIMUM_WAIT)
@@ -70,6 +77,7 @@ class SequentialRecipe(Recipe):
                 log.exception('Exception in delete_unique_znode_retry')
 
     async def analyze_siblings(self):
+        """Different labeled siblings can be returned"""
         siblings = await self.get_siblings()
         siblings.sort(key=self.sequence_number)
 
