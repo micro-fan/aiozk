@@ -1,7 +1,10 @@
 import asyncio
+import logging
 import pytest
 
 from aiozk import exc
+
+log = logging.getLogger(__name__)
 
 
 @pytest.mark.asyncio
@@ -158,4 +161,42 @@ async def test_double_barrier_enter_leakage(zk, path):
         assert enter_count == 0
         assert len(await zk.get_children(path)) == 0
     finally:
+        await zk.deleteall(path)
+
+
+@pytest.mark.asyncio
+async def test_double_barrier_leave_timeout(zk, path):
+    MIN_WORKERS = 11
+
+    async def start_first_worker():
+        barrier = zk.recipes.DoubleBarrier(path, MIN_WORKERS)
+        await barrier.enter()
+        # Some of workers won't leave in timeout so timeout exception should be
+        # occured
+        await barrier.leave(timeout=0.5)
+
+    count = 0
+
+    async def start_worker():
+        barrier = zk.recipes.DoubleBarrier(path, MIN_WORKERS)
+        await barrier.enter()
+        nonlocal count
+        count += 1
+        await asyncio.sleep(1 - count * 0.1)
+        await barrier.leave()
+
+    tasks = []
+    first_task = asyncio.create_task(start_first_worker())
+    for _ in range(MIN_WORKERS - 1):
+        tasks.append(asyncio.create_task(start_worker()))
+        # Ensure the order of creation of sequential znodes
+        await asyncio.sleep(0.1)
+
+    try:
+        with pytest.raises(exc.TimeoutError):
+            await first_task
+    finally:
+        for task in tasks:
+            if not task.done():
+                task.cancel()
         await zk.deleteall(path)
