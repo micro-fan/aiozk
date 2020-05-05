@@ -36,6 +36,9 @@ class SequentialRecipe(Recipe):
             if await self.client.exists(self.owned_paths[znode_label]):
                 raise exc.NodeExists
 
+        if '/' in znode_label:
+            raise ValueError('slash in label')
+
         path = self.sibling_path(znode_label + "-" + self.guid + "-")
 
         try:
