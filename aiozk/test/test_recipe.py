@@ -64,3 +64,26 @@ async def test_create_unique_znode_twice(zk, path):
     finally:
         await seq_recipe.delete_unique_znode('test')
         await zk.delete(path)
+
+
+@pytest.mark.asyncio
+async def test_get_siblings_relative_path(zk, path):
+    seq_recipe = SequentialRecipe(path)
+    seq_recipe.set_client(zk)
+
+    await seq_recipe.create_unique_znode('test')
+    try:
+        siblings = await seq_recipe.get_siblings()
+        assert siblings[0].startswith('test')
+    finally:
+        await seq_recipe.delete_unique_znode('test')
+        await zk.delete(path)
+
+
+@pytest.mark.asyncio
+async def test_prohibited_slash_in_label(zk, path):
+    seq_recipe = SequentialRecipe(path)
+    seq_recipe.set_client(zk)
+
+    with pytest.raises(ValueError):
+        await seq_recipe.create_unique_znode('test/test')
