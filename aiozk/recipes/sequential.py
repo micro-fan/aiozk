@@ -3,7 +3,7 @@ import logging
 import re
 import uuid
 
-from aiozk import exc, WatchEvent, RetryPolicy, states
+from aiozk import exc, WatchEvent, RetryPolicy, states, Deadline
 
 from .recipe import Recipe
 
@@ -116,6 +116,7 @@ class SequentialRecipe(Recipe):
                 log.exception('Exception in delete_garbage_znodes:')
 
     async def wait_on_sibling(self, sibling, timeout=None):
+        deadline = Deadline(timeout)
         log.debug("Waiting on sibling %s", sibling)
 
         path = self.sibling_path(sibling)
@@ -127,8 +128,8 @@ class SequentialRecipe(Recipe):
             unblocked.set_result(None)
 
         try:
-            if timeout:
-                await asyncio.wait_for(unblocked, timeout)
+            if not deadline.is_indefinite:
+                await asyncio.wait_for(unblocked, deadline.timeout)
             else:
                 await unblocked
         except asyncio.TimeoutError:

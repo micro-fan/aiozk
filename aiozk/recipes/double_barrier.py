@@ -1,7 +1,7 @@
 import asyncio
 import logging
 
-from aiozk import exc, WatchEvent
+from aiozk import exc, WatchEvent, Deadline
 
 from .sequential import SequentialRecipe
 
@@ -20,6 +20,7 @@ class DoubleBarrier(SequentialRecipe):
         return self.sibling_path("sentinel")
 
     async def enter(self, timeout=None):
+        deadline = Deadline(timeout)
         log.debug("Entering double barrier %s", self.base_path)
         barrier_lifted = self.client.wait_for_events([WatchEvent.CREATED],
                                                      self.sentinel_path)
@@ -33,14 +34,13 @@ class DoubleBarrier(SequentialRecipe):
 
         try:
             _, participants = await self.analyze_siblings()
-
             if len(participants) >= self.min_participants:
                 await self.create_znode(self.sentinel_path)
                 return
 
             try:
-                if timeout:
-                    await asyncio.wait_for(barrier_lifted, timeout)
+                if not deadline.is_indefinite:
+                    await asyncio.wait_for(barrier_lifted, deadline.timeout)
                 else:
                     await barrier_lifted
             except asyncio.TimeoutError:
@@ -51,7 +51,7 @@ class DoubleBarrier(SequentialRecipe):
 
     async def leave(self, timeout=None):
         log.debug("Leaving double barrier %s", self.base_path)
-
+        deadline = Deadline(timeout)
         while True:
             owned_positions, participants = await self.analyze_siblings()
             if not participants:
@@ -66,7 +66,7 @@ class DoubleBarrier(SequentialRecipe):
                 return
 
             if owned_positions[self.ZNODE_LABEL] == 0:
-                await self.wait_on_sibling(participants[-1], timeout)
+                await self.wait_on_sibling(participants[-1], deadline.timeout)
             else:
                 await self.delete_unique_znode(self.ZNODE_LABEL)
-                await self.wait_on_sibling(participants[0], timeout)
+                await self.wait_on_sibling(participants[0], deadline.timeout)

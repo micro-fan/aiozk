@@ -1,8 +1,7 @@
 import asyncio
 import logging
-import time
 
-from aiozk import exc, states
+from aiozk import exc, states, Deadline
 
 from .sequential import SequentialRecipe
 
@@ -11,14 +10,11 @@ log = logging.getLogger(__name__)
 
 class BaseLock(SequentialRecipe):
     async def wait_in_line(self, znode_label, timeout=None, blocked_by=None):
-        time_limit = None
-        if timeout is not None:
-            time_limit = time.time() + timeout
-
+        deadline = Deadline(timeout)
         await self.create_unique_znode(znode_label)
 
         while True:
-            if time_limit and time.time() >= time_limit:
+            if deadline.has_passed:
                 await self.delete_unique_znode(znode_label)
                 raise exc.TimeoutError
 
@@ -42,10 +38,8 @@ class BaseLock(SequentialRecipe):
             if not blockers:
                 break
 
-            if time_limit is not None:
-                timeout = time_limit - time.time()
             try:
-                await self.wait_on_sibling(blockers[-1], timeout)
+                await self.wait_on_sibling(blockers[-1], deadline.timeout)
             except exc.TimeoutError:
                 # state may change to SUSPENDED
                 await self.client.session.state.wait_for(states.States.CONNECTED)

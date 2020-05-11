@@ -1,6 +1,6 @@
 import asyncio
 
-from aiozk import exc, WatchEvent
+from aiozk import exc, WatchEvent, Deadline
 
 from .recipe import Recipe
 
@@ -22,6 +22,7 @@ class Barrier(Recipe):
             pass
 
     async def wait(self, timeout=None):
+        deadline = Deadline(timeout)
         barrier_lifted = self.client.wait_for_events(
             [WatchEvent.DELETED], self.path
         )
@@ -31,8 +32,8 @@ class Barrier(Recipe):
             return
 
         try:
-            if timeout:
-                await asyncio.wait_for(barrier_lifted, timeout)
+            if not deadline.is_indefinite:
+                await asyncio.wait_for(barrier_lifted, deadline.timeout)
             else:
                 await barrier_lifted
         except asyncio.TimeoutError:
