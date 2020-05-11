@@ -9,7 +9,7 @@ RUN apt update && apt install -y \
 
 ENV ZOOKEEPER_VERSION 3.5.7
 ENV ZOOKEEPER_PACKAGE apache-zookeeper-${ZOOKEEPER_VERSION}-bin
-RUN curl -sS http://apache.mirrors.pair.com/zookeeper/zookeeper-${ZOOKEEPER_VERSION}/${ZOOKEEPER_PACKAGE}.tar.gz | tar -xzf - -C /opt \
+RUN curl -sS http://archive.apache.org/dist/zookeeper/zookeeper-${ZOOKEEPER_VERSION}/${ZOOKEEPER_PACKAGE}.tar.gz | tar -xzf - -C /opt \
   && mv /opt/${ZOOKEEPER_PACKAGE} /opt/zookeeper \
   && chown -R root:root /opt/zookeeper
 
