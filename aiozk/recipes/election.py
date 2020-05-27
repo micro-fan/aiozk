@@ -1,44 +1,61 @@
 import asyncio
+import logging
 
+from .. import exc
 from .sequential import SequentialRecipe
+
+log = logging.getLogger(__name__)
 
 
 class LeaderElection(SequentialRecipe):
+    LABEL = 'candidate'
 
     def __init__(self, base_path):
         super().__init__(base_path)
         self.has_leadership = False
+        self.leadership_future = None
+        self.watch_loop_task = None
 
-        self.leadership_future = self.client.loop.create_future()
+    async def volunteer(self):
+        await self.create_unique_znode(self.LABEL)
+        self.watch_loop_task = asyncio.ensure_future(self.watch_loop(),
+                                                     loop=self.client.loop)
 
-    async def join(self):
-        await self.create_unique_znode("candidate")
-        await self.check_position()
+    async def watch_loop(self):
+        while True:
+            owned_positions, candidates = await self.analyze_siblings()
+            if self.LABEL not in owned_positions:
+                log.error('Znode for leader election does not exist')
+                raise exc.NoNode
 
-    async def check_position(self, _=None):
-        owned_positions, candidates = await self.analyze_siblings()
-        if "candidate" not in owned_positions:
-            return
+            position = owned_positions[self.LABEL]
+            if position == 0:
+                self.has_leadership = True
+                if self.leadership_future is not None:
+                    self.leadership_future.set_result(None)
+                return
 
-        position = owned_positions["candidate"]
-
-        self.has_leadership = bool(position == 0)
-
-        if self.has_leadership:
-            self.leadership_future.set_result(None)
-            return
-
-        await self.wait_on_sibling(candidates[position - 1])
-        asyncio.ensure_future(self.check_position(), loop=self.client.loop)
+            await self.wait_on_sibling(candidates[position - 1])
 
     async def wait_for_leadership(self, timeout=None):
         if self.has_leadership:
             return
 
-        if timeout:
-            await asyncio.wait_for(self.leadership_future, timeout)
+        if self.leadership_future is None:
+            self.leadership_future = self.client.loop.create_future()
+
+        if timeout is not None:
+            try:
+                await asyncio.wait_for(asyncio.shield(self.leadership_future),
+                                       timeout)
+            except asyncio.TimeoutError:
+                raise exc.TimeoutError
         else:
             await self.leadership_future
 
     async def resign(self):
-        await self.delete_unique_znode("candidate")
+        if self.watch_loop_task and not self.watch_loop_task.done():
+            self.watch_loop_task.cancel()
+            self.watch_loop_task = None
+        await self.delete_unique_znode(self.LABEL)
+        self.has_leadership = False
