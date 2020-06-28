@@ -53,7 +53,10 @@ class Session:
 
         self.repair_loop_task = None
 
+        # asyncio.TimerHandle object
         self.heartbeat_handle = None
+        # asyncio.Task object
+        self.heartbeat_task = None
 
         self.watch_callbacks = collections.defaultdict(set)
 
@@ -236,7 +239,8 @@ class Session:
         self.heartbeat_handle = self.loop.call_later(timeout, self.create_heartbeat)
 
     def create_heartbeat(self):
-        self.loop.create_task(self.heartbeat())
+        if not self.heartbeat_task or self.heartbeat_task.done():
+            self.heartbeat_task = self.loop.create_task(self.heartbeat())
 
     async def heartbeat(self):
         if self.closing:
