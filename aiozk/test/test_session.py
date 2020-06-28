@@ -2,6 +2,7 @@ import asyncio
 from unittest import mock
 
 import aiozk.session
+from aiozk.states import States
 
 import pytest
 import asynctest
@@ -177,3 +178,38 @@ async def test_cxid_rollover(zk, path):
 
     assert zk.session.xid < 0x7fffffff
     assert zk.session.xid > 0
+
+
+@pytest.mark.asyncio
+async def test_duplicated_heartbeat_task(servers, event_loop):
+    session = aiozk.session.Session(servers, 3, None, False, None, event_loop)
+    await session.start()
+    session.set_heartbeat()
+
+    # Simulate that response is delayed
+    session.conn.read_loop_task.cancel()
+    # Ensure that the first heartbeat task is running and waiting for a
+    # response of ping request.
+    await asyncio.sleep(session.timeout / aiozk.session.HEARTBEAT_FREQUENCY +
+                        0.1)
+    # While the first heartbeat task is waiting for a response,
+    # .set_heartbeat() can be called by session.send().
+    session.set_heartbeat()
+    # Ensure that the second heartbeat task is running and waiting for a
+    # response of ping request.
+    await asyncio.sleep(session.timeout / aiozk.session.HEARTBEAT_FREQUENCY +
+                        0.1)
+    session.conn.start_read_loop()
+    # If the second call of .set_heartbeat() created a duplicated heartbeat
+    # task and the state of session turns into SUSPENDED. The right behavior is
+    # that the second call of .set_heartbeat does not create a duplicated
+    # heartbeat task.
+    try:
+        with pytest.raises(asyncio.TimeoutError):
+            await asyncio.wait_for(
+                session.state.wait_for(States.SUSPENDED),
+                timeout=session.timeout -
+                session.timeout / aiozk.session.HEARTBEAT_FREQUENCY * 2)
+    finally:
+        await session.state.wait_for(States.CONNECTED)
+        await session.close()

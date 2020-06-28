@@ -11,6 +11,11 @@ HOST = os.environ.get('ZK_HOST', 'zk')
 
 
 @pytest.fixture
+def servers():
+    return HOST
+
+
+@pytest.fixture
 def event_loop(event_loop):
     event_loop.set_debug(True)
     yield event_loop
