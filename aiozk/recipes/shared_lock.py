@@ -1,27 +1,16 @@
-from aiozk import exc, Deadline
-
 from .base_lock import BaseLock
+from .lock import Lock
 
 
 class SharedLock(BaseLock):
-    async def acquire_read(self, timeout=None):
-        deadline = Deadline(timeout)
-        result = None
-        while not result:
-            try:
-                result = await self.wait_in_line(
-                    "read", deadline.timeout, blocked_by=("write")
-                )
-            except exc.SessionLost:
-                continue
-        return result
+    sub_recipes = {
+        'reader_lock':
+        (Lock, ['base_path', 'read_znode_label', 'read_blocked_by']),
+        'writer_lock': (Lock, ['base_path', 'write_znode_label'])
+    }
 
-    async def acquire_write(self, timeout=None):
-        deadline = Deadline(timeout)
-        result = None
-        while not result:
-            try:
-                result = await self.wait_in_line("write", deadline.timeout)
-            except exc.SessionLost:
-                continue
-        return result
+    def __init__(self, base_path):
+        self.read_znode_label = 'read'
+        self.write_znode_label = 'write'
+        self.read_blocked_by = ('write', )
+        super().__init__(base_path)
