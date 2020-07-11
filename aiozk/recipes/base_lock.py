@@ -1,18 +1,34 @@
 import asyncio
 import logging
 
-from aiozk import exc, states, Deadline
-
+from .. import exc, states, Deadline
 from .sequential import SequentialRecipe
 
 log = logging.getLogger(__name__)
 
 
 class BaseLock(SequentialRecipe):
+    def __init__(self, base_path):
+        super().__init__(base_path)
+        self.monitor_session_task = None
+
+    async def monitor_session(self):
+        fut = self.client.session.state.wait_for(states.States.LOST)
+        try:
+            await fut
+            log.warning(
+                'Session expired at some point, lock %s no longer acquired.',
+                self)
+        except asyncio.CancelledError:
+            self.client.session.state.remove_waiting(fut, states.States.LOST)
+            raise
+
     async def wait_in_line(self, znode_label, timeout=None, blocked_by=None):
+        """If blocked_by is specified using tuple, wait for prior znodes whose
+        label is in the blocked_by. If it is not given, wait for any prior
+        znodes"""
         deadline = Deadline(timeout)
         await self.create_unique_znode(znode_label)
-
         while True:
             if deadline.has_passed:
                 await self.delete_unique_znode(znode_label)
@@ -22,7 +38,8 @@ class BaseLock(SequentialRecipe):
                 owned_positions, contenders = await self.analyze_siblings()
             except exc.TimeoutError:
                 # state may change to SUSPENDED
-                await self.client.session.state.wait_for(states.States.CONNECTED)
+                await self.client.session.state.wait_for(
+                    states.States.CONNECTED)
                 continue
 
             if znode_label not in owned_positions:
@@ -34,7 +51,6 @@ class BaseLock(SequentialRecipe):
                     contender for contender in blockers
                     if self.determine_znode_label(contender) in blocked_by
                 ]
-
             if not blockers:
                 break
 
@@ -42,50 +58,20 @@ class BaseLock(SequentialRecipe):
                 await self.wait_on_sibling(blockers[-1], deadline.timeout)
             except exc.TimeoutError:
                 # state may change to SUSPENDED
-                await self.client.session.state.wait_for(states.States.CONNECTED)
+                await self.client.session.state.wait_for(
+                    states.States.CONNECTED)
                 continue
 
-        return self.make_contextmanager(znode_label)
+        if not self.monitor_session_task or self.monitor_session_task.done():
+            self.monitor_session_task = asyncio.create_task(
+                self.monitor_session())
 
-    def make_contextmanager(self, znode_label):
-        state = {"acquired": True}
+    async def get_out_of_line(self, znode_label):
+        await self.delete_unique_znode(znode_label)
 
-        def still_acquired():
-            return state["acquired"]
-
-        state_fut = self.client.session.state.wait_for(states.States.LOST)
-
-        async def handle_session_loss():
-            await state_fut
-            if not state["acquired"]:
-                return
-
-            log.warning(
-                "Session expired at some point, lock %s no longer acquired.",
-                self)
-            state["acquired"] = False
-
-        fut = asyncio.ensure_future(handle_session_loss(),
-                                    loop=self.client.loop)
-
-        async def on_exit():
-            state["acquired"] = False
-            if not fut.done():
-                if not state_fut.done():
-                    self.client.session.state.remove_waiting(
-                        state_fut, states.States.LOST)
-                fut.cancel()
-
-            await self.delete_unique_znode(znode_label)
-
-        class Lock:
-            async def __aenter__(self):
-                return self
-
-            async def __aexit__(self, exc_type, exc, tb):
-                await on_exit()
-
-        return Lock()
+        if not self.owned_paths and not self.monitor_session_task.done():
+            self.monitor_session_task.cancel()
+            self.monitor_session_task = None
 
 
 class LockLostError(exc.ZKError):
