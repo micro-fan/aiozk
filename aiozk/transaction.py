@@ -84,6 +84,3 @@ class Result:
             len(self.updated),
             len(self.deleted),
         ]) > 0
-
-    def __nonzero__(self):
-        return self.__bool__()
