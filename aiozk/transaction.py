@@ -1,4 +1,5 @@
 from aiozk import protocol
+from aiozk.exc import TransactionFailed
 
 
 class Transaction:
@@ -67,6 +68,17 @@ class Transaction:
                 result.deleted.add(self.client.denormalize_path(request.path))
 
         return result
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exception, tb):
+        # propagate error by returning None
+        if exception:
+            return
+        result = await self.commit()
+        if not result:
+            raise TransactionFailed
 
 
 class Result:

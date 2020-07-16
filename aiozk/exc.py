@@ -40,6 +40,10 @@ class InvalidStateTransition(ZKError):
     pass
 
 
+class TransactionFailed(ZKError):
+    pass
+
+
 response_error_xref = {}
 
 
