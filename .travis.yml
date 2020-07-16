@@ -10,3 +10,7 @@ install:
 
 script:
   - ./test-runner.sh
+
+after_success:
+  - pip3 install codecov
+  - codecov

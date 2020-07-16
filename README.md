@@ -117,7 +117,7 @@ We've chosen `zookeeper 3.5` version since it has an ability to dynamic reconfig
 
 ```sh
 # first terminal: launch zookeeper cluster
-docker-compose rm -fv && docker-compose build zk && docker-compose scale zk=7 && docker-compose up zk_seed zk
+docker-compose rm -fv && docker-compose build zk && docker-compose up --scale zk=7 zk_seed zk
 
 # it will launch cluster in this terminal and remain. last lines should be like this:
 
@@ -148,7 +148,7 @@ zk_7       | Reconfiguring...
 zk_7       | ethernal loop
 ```
 
-Run tests:
+Run tests in docker:
 
 ```sh
 docker-compose run --no-deps aiozk
@@ -161,6 +161,12 @@ Ran 3 tests in 1.059s
 
 OK
 
+```
+
+Run tests locally:
+```sh
+# ZK_IP can be something from logs above, like: ZK_HOST=172.21.0.6:2181
+ZK_HOST=<ZK_IP> ./venv/bin/pytest
 ```
 
 ### Recipes testing

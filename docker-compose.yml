@@ -24,7 +24,7 @@ services:
 
   aiozk:
     build: .
-    command: /bin/bash -c 'python3 setup.py install && fan_wait zk 2181 && pytest'
+    command: /bin/bash -c 'python3 setup.py install && fan_wait zk 2181 && pytest --cov=aiozk --cov-config=.coveragerc && coverage xml'
     environment:
       - PYTHONPATH=.
     volumes:

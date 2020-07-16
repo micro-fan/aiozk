@@ -32,6 +32,7 @@ setup(
         'pytest',
         'pytest-asyncio',
         'asynctest',
+        'pytest-cov',
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',
