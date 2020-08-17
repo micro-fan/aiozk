@@ -7,7 +7,7 @@ from aiozk.states import States
 import pytest
 import asynctest
 
-from aiozk import exc
+from aiozk import exc, protocol
 
 
 @pytest.fixture
@@ -212,4 +212,31 @@ async def test_duplicated_heartbeat_task(servers, event_loop):
                 session.timeout / aiozk.session.HEARTBEAT_FREQUENCY * 2)
     finally:
         await session.state.wait_for(States.CONNECTED)
+        await session.close()
+
+
+@pytest.mark.asyncio
+async def test_send_timeout(servers, event_loop, path):
+    session = aiozk.session.Session(servers, 3, None, False, None, event_loop)
+    await session.start()
+    await session.state.wait_for(States.CONNECTED)
+    # Simulate that response is delayed
+    session.conn.read_loop_task.cancel()
+
+    await asyncio.sleep(0.1)
+
+    nonode_path = path
+    with pytest.raises(asyncio.TimeoutError):
+        await asyncio.wait_for(session.send(
+            protocol.ExistsRequest(path=nonode_path, watch=False)),
+                               timeout=0.1)
+
+    await asyncio.sleep(0.1)
+    session.conn.start_read_loop()
+    try:
+        with pytest.raises(exc.NoNode):
+            await asyncio.wait_for(session.send(
+                protocol.ExistsRequest(path=nonode_path, watch=False)),
+                                   timeout=session.timeout + 1)
+    finally:
         await session.close()
