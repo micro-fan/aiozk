@@ -166,10 +166,11 @@ class Connection:
             else:
                 f = self.pending.pop(xid)
 
-            if isinstance(response, Exception):
-                f.set_exception(response)
-            elif not f.cancelled():
-                f.set_result((zxid, response))
+            if not f.done():
+                if isinstance(response, Exception):
+                    f.set_exception(response)
+                else:
+                    f.set_result((zxid, response))
 
     async def _read(self, size=-1):
         remaining_size = size
