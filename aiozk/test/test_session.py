@@ -30,6 +30,15 @@ def session(event_loop):
     return session
 
 
+@pytest.fixture
+def retry_policy():
+    with mock.patch('aiozk.session.RetryPolicy') as rpcls:
+        rp = rpcls.exponential_backoff.return_value
+        enforce = asynctest.CoroutineMock(side_effect=lambda: asyncio.sleep(0))
+        rp.enforce = enforce
+        yield rp
+
+
 def prepare_repair_loop_callback_done_future(session):
     """Creates future that Awaits for session.repair_loop_task to be completed and returns value of session.closing"""
     future = session.loop.create_future()
@@ -240,3 +249,25 @@ async def test_send_timeout(servers, event_loop, path):
                                    timeout=session.timeout + 1)
     finally:
         await session.close()
+
+
+@pytest.mark.asyncio
+async def test_find_server(session, retry_policy):
+    session.make_connection = asynctest.CoroutineMock()
+    conn = mock.MagicMock()
+    conn.close = asynctest.CoroutineMock()
+    conn.start_read_only = True
+    session.make_connection.return_value = conn
+
+    task = session.loop.create_task(session.find_server(allow_read_only=False))
+
+    async def _wait_for():
+        while retry_policy.enforce.await_count < 4:
+            await asyncio.sleep(0)
+
+    await asyncio.wait_for(_wait_for(), 1)
+    assert not task.done(), 'find_server should not finish '
+    task.cancel()
+
+    conn.start_read_only = False
+    await session.find_server(allow_read_only=False)
