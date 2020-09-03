@@ -108,7 +108,11 @@ class Session:
             for host, port in servers:
                 log.info("Connecting to %s:%s", host, port)
                 conn = await self.make_connection(host, port)
-                if not conn or (conn.start_read_only and not allow_read_only):
+                if not conn:
+                    continue
+                elif conn.start_read_only and not allow_read_only:
+                    self.loop.create_task(conn.close(self.timeout))
+                    conn = None
                     continue
                 log.info("Connected to %s:%s", host, port)
                 break
@@ -122,9 +126,6 @@ class Session:
         if old_conn:
             log.debug('Close old connection')
             self.loop.create_task(old_conn.close(self.timeout))
-
-        if conn.start_read_only:
-            self.loop.create_task(self.find_server(allow_read_only=False))
 
     async def make_connection(self, host, port):
         conn = Connection(host, port, watch_handler=self.event_dispatch, read_timeout=self.read_timeout, loop=self.loop)
