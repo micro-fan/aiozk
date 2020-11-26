@@ -3,12 +3,24 @@ from aiozk.exc import TransactionFailed
 
 
 class Transaction:
+    """Transaction request builder"""
 
     def __init__(self, client):
+        """
+        :param client: Client instance
+        :type client:  aiozk.ZKClient
+        """
         self.client = client
         self.request = protocol.TransactionRequest()
 
     def check_version(self, path, version):
+        """
+        Check znode version
+
+        :param path:
+        :param version:
+        :return:
+        """
         path = self.client.normalize_path(path)
 
         self.request.add(
@@ -19,6 +31,17 @@ class Transaction:
             self, path, data=None, acl=None,
             ephemeral=False, sequential=False, container=False
     ):
+        """
+        Create new znode
+
+        :param path:
+        :param data:
+        :param acl:
+        :param ephemeral:
+        :param sequential:
+        :param container:
+        :return:
+        """
         if container and not self.client.features.containers:
             raise ValueError("Cannot create container, feature unavailable.")
 
@@ -36,6 +59,14 @@ class Transaction:
         self.request.add(request)
 
     def set_data(self, path, data, version=-1):
+        """
+        Set data to znode
+
+        :param path:
+        :param data:
+        :param version:
+        :return:
+        """
         path = self.client.normalize_path(path)
 
         self.request.add(
@@ -43,6 +74,13 @@ class Transaction:
         )
 
     def delete(self, path, version=-1):
+        """
+        Delete znode
+
+        :param path:
+        :param version:
+        :return:
+        """
         path = self.client.normalize_path(path)
 
         self.request.add(
@@ -50,6 +88,14 @@ class Transaction:
         )
 
     async def commit(self):
+        """
+        Send all calls in transaction request and return results
+
+        :return: Transaction results
+        :rtype: aiozk.transaction.Result
+
+        :raises ValueError: On no operations to commit
+        """
         if not self.request.requests:
             raise ValueError("No operations to commit.")
 
@@ -82,6 +128,17 @@ class Transaction:
 
 
 class Result:
+    """
+    Transaction result aggregator
+
+    Contains attributes:
+
+    - **checked** Set with results of ``check_version()`` methods
+    - **created** Set with results of ``create()`` methods
+    - **updated** Set with results of ``set_data()`` methods
+    - **deleted** Set with results of ``delete()`` methods
+
+    """
 
     def __init__(self):
         self.checked = set()

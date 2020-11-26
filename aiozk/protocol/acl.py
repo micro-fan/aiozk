@@ -16,6 +16,9 @@ class ID(Part):
 
 class ACL(Part):
     """
+    ACL object. Used to control access to its znodes.
+
+    Do not create this object directly, use ``aiozk,ACL.make()`` instead.
     """
     READ_PERM = 1 << 0
     WRITE_PERM = 1 << 1
@@ -33,6 +36,34 @@ class ACL(Part):
             cls, scheme, id,
             read=False, write=False, create=False, delete=False, admin=False
     ):
+        """
+        Create ACL
+
+        :param str scheme: ACL scheme, one of following:
+
+        - **world** has a single id, anyone, that represents **anyone**.
+        - **auth** doesn't use any id, represents any authenticated user.
+        - **digest** uses a username:password string to generate MD5 hash
+          which is then used as an ACL ID identity.
+        - **host** uses the client host name as an ACL ID identity.
+        - **ip** uses the client host IP or CIDR as an ACL ID identity.
+
+        :param str id: ACL ID identity.
+
+        :param bool read: Permission, can get data from a node
+          and list its children
+
+        :param bool write: Permission, can set data for a node
+
+        :param bool create: Permission, can create a child node
+
+        :param bool delete: Permission, can delete a child node
+
+        :param bool admin: Permission, can set permissions
+
+        :return: ACL instance
+        :rtype: aiozk.ACL
+        """
         instance = cls(id=ID(scheme=scheme, id=id))
         instance.set_perms(read, write, create, delete, admin)
 
