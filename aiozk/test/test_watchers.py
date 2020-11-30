@@ -114,11 +114,11 @@ async def test_child_watch(child_watcher, path, zk, child1, child2):
     child_watcher.add_callback(path, children_callback)
     assert children == set()
     await zk.create(child1)
-    await asyncio.wait([ready.wait()], timeout=0.1)
+    await asyncio.wait_for(ready.wait(), timeout=0.1)
     assert children == {child1.split('/')[-1]}
     ready.clear()
     await zk.create(child2)
-    await asyncio.wait([ready.wait()], timeout=0.1)
+    await asyncio.wait_for(ready.wait(), timeout=0.1)
     assert ready.is_set()
     assert children == {child.split('/')[-1] for child in (child1, child2)}
     child_watcher.remove_callback(path, children_callback)

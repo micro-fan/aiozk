@@ -178,14 +178,13 @@ class Connection:
         payload = []
         while remaining_size and (time() < end_time):
             remaining_time = end_time - time()
-            done, pending = await asyncio.wait([self.reader.read(remaining_size)],
-                                                timeout=remaining_time)
-            if done:
-                chunk = done.pop().result()
-                payload.append(chunk)
-                remaining_size -= len(chunk)
-            if pending:
-                pending.pop().cancel()
+            try:
+                chunk = await asyncio.wait_for(self.reader.read(remaining_size),
+                                               timeout=remaining_time)
+            except asyncio.TimeoutError:
+                continue
+            payload.append(chunk)
+            remaining_size -= len(chunk)
         if remaining_size:
             raise exc.UnfinishedRead
         return b''.join(payload)
