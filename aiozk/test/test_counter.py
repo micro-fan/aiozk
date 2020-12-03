@@ -37,7 +37,7 @@ async def test_counter_multiple(zk, path):
 
     workers = []
     for _i in range(5):
-        workers.append(worker())
+        workers.append(asyncio.create_task(worker()))
 
     done, _pending = await asyncio.wait(workers)
     assert len(done) == 5  # sanity check
@@ -57,7 +57,7 @@ async def test_counter_single_reused(zk, path):
 
     workers = []
     for _i in range(5):
-        workers.append(worker())
+        workers.append(asyncio.create_task(worker()))
 
     done, _pending = await asyncio.wait(workers)
     assert len(done) == 5

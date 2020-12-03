@@ -45,9 +45,8 @@ async def test_double_barrier(zk, path):
     target = 8
     for _ in range(target):
         num_workers += 1
-        workers.append(
-            asyncio.ensure_future(start_worker(target), loop=zk.loop))
-    await asyncio.wait(workers, loop=zk.loop)
+        workers.append(zk.loop.create_task(start_worker(target)))
+    await asyncio.wait(workers)
     await zk.delete(path)
 
 
