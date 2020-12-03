@@ -17,9 +17,10 @@ class Transaction:
         """
         Check znode version
 
-        :param path:
-        :param version:
-        :return:
+        :param str path: Znode path
+        :param int version: Znode version
+
+        :return: None
         """
         path = self.client.normalize_path(path)
 
@@ -34,13 +35,22 @@ class Transaction:
         """
         Create new znode
 
-        :param path:
-        :param data:
-        :param acl:
-        :param ephemeral:
-        :param sequential:
-        :param container:
-        :return:
+        :param str path: Znode path
+
+        :param data: Data to store in node
+        :type data: str or bytes
+
+        :param acl: List of ACLs
+        :type acl: [aiozk.ACL]
+
+        :param bool ephemeral: Ephemeral node type
+        :param bool sequential: Sequential node type
+        :param bool container: Container node type
+
+        :return: None
+
+        :raises ValueError: when *containers* feature is not supported by
+            Zookeeper server (< 3.5.1)
         """
         if container and not self.client.features.containers:
             raise ValueError("Cannot create container, feature unavailable.")
@@ -62,10 +72,14 @@ class Transaction:
         """
         Set data to znode
 
-        :param path:
-        :param data:
-        :param version:
-        :return:
+        :param str path: Znode path
+
+        :param data: Data to store in node
+        :type data: str or bytes
+
+        :param int version: Current version of node
+
+        :return: None
         """
         path = self.client.normalize_path(path)
 
@@ -77,9 +91,10 @@ class Transaction:
         """
         Delete znode
 
-        :param path:
-        :param version:
-        :return:
+        :param str path: Znode path
+        :param int version: Current version of node
+
+        :return: None
         """
         path = self.client.normalize_path(path)
 

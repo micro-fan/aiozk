@@ -41,12 +41,12 @@ class ACL(Part):
 
         :param str scheme: ACL scheme, one of following:
 
-        - **world** has a single id, anyone, that represents **anyone**.
-        - **auth** doesn't use any id, represents any authenticated user.
-        - **digest** uses a username:password string to generate MD5 hash
-          which is then used as an ACL ID identity.
-        - **host** uses the client host name as an ACL ID identity.
-        - **ip** uses the client host IP or CIDR as an ACL ID identity.
+            - **world** has a single id, anyone, that represents **anyone**.
+            - **auth** doesn't use any id, represents any authenticated user.
+            - **digest** uses a username:password string to generate MD5 hash
+              which is then used as an ACL ID identity.
+            - **host** uses the client host name as an ACL ID identity.
+            - **ip** uses the client host IP or CIDR as an ACL ID identity.
 
         :param str id: ACL ID identity.
 

@@ -321,7 +321,7 @@ class ZKClient:
     async def set(self, path, data, version):
         """
         Set data to znode. Prefer using .set_data than this method unless you
-            have to control the concurrency.
+        have to control the concurrency.
 
         :param str path: Path of znode
 
@@ -376,7 +376,7 @@ class ZKClient:
     async def get_children(self, path, watch=False):
         """
         Get all children names. Returned names are only basename and they does
-            not include dirname.
+        not include dirname.
 
         :param str path: Path of znode
 
@@ -440,12 +440,11 @@ class ZKClient:
     def begin_transaction(self):
         """
         Return Transaction instance which provides methods for read/write
-            operations and commit method. This instance is used for
-            transaction request.
+        operations and commit method. This instance is used for
+        transaction request.
 
         :return: Transaction instance which can be used for adding read/write
             operations
-
 
         :rtype: aiozk.transaction.Transaction
         """
