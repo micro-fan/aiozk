@@ -3,12 +3,25 @@ from aiozk.exc import TransactionFailed
 
 
 class Transaction:
+    """Transaction request builder"""
 
     def __init__(self, client):
+        """
+        :param client: Client instance
+        :type client:  aiozk.ZKClient
+        """
         self.client = client
         self.request = protocol.TransactionRequest()
 
     def check_version(self, path, version):
+        """
+        Check znode version
+
+        :param str path: Znode path
+        :param int version: Znode version
+
+        :return: None
+        """
         path = self.client.normalize_path(path)
 
         self.request.add(
@@ -19,6 +32,26 @@ class Transaction:
             self, path, data=None, acl=None,
             ephemeral=False, sequential=False, container=False
     ):
+        """
+        Create new znode
+
+        :param str path: Znode path
+
+        :param data: Data to store in node
+        :type data: str or bytes
+
+        :param acl: List of ACLs
+        :type acl: [aiozk.ACL]
+
+        :param bool ephemeral: Ephemeral node type
+        :param bool sequential: Sequential node type
+        :param bool container: Container node type
+
+        :return: None
+
+        :raises ValueError: when *containers* feature is not supported by
+            Zookeeper server (< 3.5.1)
+        """
         if container and not self.client.features.containers:
             raise ValueError("Cannot create container, feature unavailable.")
 
@@ -36,6 +69,18 @@ class Transaction:
         self.request.add(request)
 
     def set_data(self, path, data, version=-1):
+        """
+        Set data to znode
+
+        :param str path: Znode path
+
+        :param data: Data to store in node
+        :type data: str or bytes
+
+        :param int version: Current version of node
+
+        :return: None
+        """
         path = self.client.normalize_path(path)
 
         self.request.add(
@@ -43,6 +88,14 @@ class Transaction:
         )
 
     def delete(self, path, version=-1):
+        """
+        Delete znode
+
+        :param str path: Znode path
+        :param int version: Current version of node
+
+        :return: None
+        """
         path = self.client.normalize_path(path)
 
         self.request.add(
@@ -50,6 +103,14 @@ class Transaction:
         )
 
     async def commit(self):
+        """
+        Send all calls in transaction request and return results
+
+        :return: Transaction results
+        :rtype: aiozk.transaction.Result
+
+        :raises ValueError: On no operations to commit
+        """
         if not self.request.requests:
             raise ValueError("No operations to commit.")
 
@@ -82,6 +143,17 @@ class Transaction:
 
 
 class Result:
+    """
+    Transaction result aggregator
+
+    Contains attributes:
+
+    - **checked** Set with results of ``check_version()`` methods
+    - **created** Set with results of ``create()`` methods
+    - **updated** Set with results of ``set_data()`` methods
+    - **deleted** Set with results of ``delete()`` methods
+
+    """
 
     def __init__(self):
         self.checked = set()
