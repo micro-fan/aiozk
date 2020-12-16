@@ -225,6 +225,29 @@ async def test_duplicated_heartbeat_task(servers, event_loop):
 
 
 @pytest.mark.asyncio
+async def test_session_close_heartbeat_cancellation(servers, event_loop):
+    session = aiozk.session.Session(servers, 3, None, False, None, event_loop)
+    await session.start()
+    heartbeat_task = mock.AsyncMock()
+    done = mock.MagicMock()
+    done.return_value = False
+    heartbeat_task.done = done
+
+    cancel_called = False
+
+    def cancel():
+        nonlocal cancel_called
+        cancel_called = True
+
+    heartbeat_task.cancel = cancel
+    session.heartbeat_task = heartbeat_task
+    await session.close()
+
+    assert cancel_called
+    assert session.heartbeat_task is None
+
+
+@pytest.mark.asyncio
 async def test_send_timeout(servers, event_loop, path):
     session = aiozk.session.Session(servers, 3, None, False, None, event_loop)
     await session.start()
