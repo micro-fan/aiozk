@@ -5,27 +5,26 @@ import aiozk.session
 from aiozk.states import States
 
 import pytest
-import asynctest
 
 from aiozk import exc, protocol
 
 
 @pytest.fixture
 def session(event_loop):
-    fake_retry_policy = asynctest.MagicMock(wraps=aiozk.session.RetryPolicy.forever())
+    fake_retry_policy = mock.MagicMock(wraps=aiozk.session.RetryPolicy.forever())
     session = aiozk.session.Session(
         'zookeeper.test',
         timeout=10,
         retry_policy=fake_retry_policy,
         allow_read_only=True,
         read_timeout=30,
-        loop=asynctest.MagicMock(wraps=event_loop),
+        loop=mock.MagicMock(wraps=event_loop),
     )
     session.state.transition_to(aiozk.session.States.CONNECTED)
-    session.conn = asynctest.MagicMock()
-    session.conn.send = asynctest.CoroutineMock()
-    session.conn.close = asynctest.CoroutineMock()
-    session.ensure_safe_state = asynctest.CoroutineMock()
+    session.conn = mock.MagicMock()
+    session.conn.send = mock.AsyncMock()
+    session.conn.close = mock.AsyncMock()
+    session.ensure_safe_state = mock.AsyncMock()
     session.set_heartbeat = mock.Mock()
     return session
 
@@ -34,7 +33,10 @@ def session(event_loop):
 def retry_policy():
     with mock.patch('aiozk.session.RetryPolicy') as rpcls:
         rp = rpcls.exponential_backoff.return_value
-        enforce = asynctest.CoroutineMock(side_effect=lambda: asyncio.sleep(0))
+
+        async def sleep_zero():
+            await asyncio.sleep(0)
+        enforce = mock.AsyncMock(side_effect=sleep_zero)
         rp.enforce = enforce
         yield rp
 
@@ -276,9 +278,9 @@ async def test_send_timeout(servers, event_loop, path):
 
 @pytest.mark.asyncio
 async def test_find_server(session, retry_policy):
-    session.make_connection = asynctest.CoroutineMock()
+    session.make_connection = mock.AsyncMock()
     conn = mock.MagicMock()
-    conn.close = asynctest.CoroutineMock()
+    conn.close = mock.AsyncMock()
     conn.start_read_only = True
     session.make_connection.return_value = conn
 
