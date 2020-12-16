@@ -335,5 +335,9 @@ class Session:
             await self.conn.close(self.timeout)
         if self.heartbeat_handle:
             self.heartbeat_handle.cancel()
+            self.heartbeat_handle = None
+        if self.heartbeat_task and not self.heartbeat_task.done():
+            self.heartbeat_task.cancel()
+            self.heartbeat_task = None
         self.closing = False
         self.started = False
