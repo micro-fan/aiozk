@@ -1,5 +1,5 @@
+from unittest import mock
 import asyncio
-import asynctest
 import logging
 import pytest
 import time
@@ -94,7 +94,7 @@ async def test_timeout_accuracy(zk, path):
         async with zk.recipes.Lock(path):
             lock2 = zk.recipes.Lock(path)
             analyze_siblings = lock2.analyze_siblings
-            lock2.analyze_siblings = asynctest.CoroutineMock()
+            lock2.analyze_siblings = mock.AsyncMock()
 
             async def slow_analyze():
                 await asyncio.sleep(0.5)

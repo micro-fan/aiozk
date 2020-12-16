@@ -1,6 +1,5 @@
-import asyncio
+from unittest import mock
 
-import asynctest
 import pytest
 
 import aiozk.connection
@@ -11,20 +10,20 @@ def connection(event_loop):
     connection = aiozk.connection.Connection(
         host='zookeeper.test',
         port=2181,
-        watch_handler=asynctest.MagicMock(),
+        watch_handler=mock.MagicMock(),
         read_timeout=30,
-        loop=asynctest.MagicMock(wraps=event_loop))
+        loop=mock.MagicMock(wraps=event_loop))
 
-    connection.writer = asynctest.MagicMock()
+    connection.writer = mock.MagicMock()
     return connection
 
 
 @pytest.mark.asyncio
 async def test_close_connection_in_state_closing_do_not_performs_abort(connection):
-    connection.abort = asynctest.CoroutineMock()
+    connection.abort = mock.AsyncMock()
     connection.closing = True
 
-    await connection.close(asynctest.ANY)
+    await connection.close(mock.ANY)
 
     connection.abort.assert_not_awaited()
 
@@ -32,7 +31,7 @@ async def test_close_connection_in_state_closing_do_not_performs_abort(connectio
 @pytest.mark.asyncio
 async def test_close_cancels_read_loop_task(connection):
     connection.start_read_loop()
-    connection.read_response = asynctest.CoroutineMock(return_value=(0, asynctest.ANY, asynctest.ANY))
+    connection.read_response = mock.AsyncMock(return_value=(0, mock.ANY, mock.ANY))
 
     task_cancelled_future = connection.loop.create_future()
 
@@ -41,5 +40,5 @@ async def test_close_cancels_read_loop_task(connection):
 
     connection.read_loop_task.add_done_callback(set_result)
 
-    await connection.close(asynctest.ANY)
+    await connection.close(mock.ANY)
     assert await task_cancelled_future
