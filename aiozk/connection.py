@@ -136,6 +136,10 @@ class Connection:
 
         return f
 
+    def pending_count(self):
+        return (sum(len(futs) for futs in self.pending_specials.values()) +
+                len(self.pending))
+
     async def read_loop(self):
         """
         Infinite loop that reads messages off of the socket while not closed.
@@ -146,7 +150,7 @@ class Connection:
         This is never used directly and is fired as a separate callback on the
         I/O loop via the `connect()` method.
         """
-        while not self.closing:
+        while not self.closing or self.pending_count() > 0:
             try:
                 xid, zxid, response = await self.read_response()
             except (ConnectionAbortedError, asyncio.CancelledError):
@@ -258,21 +262,20 @@ class Connection:
             return
         self.closing = True
 
-        if self.read_loop_task:
-            self.read_loop_task.cancel()
-            with suppress(asyncio.CancelledError):
-                await self.read_loop_task
-
-        if self.pending or (self.pending_specials and self.pending_specials != {None: []}):
-            log.warning('Pendings: {}; specials:  {}'.format(self.pending, self.pending_specials))
+        if self.read_loop_task and not self.read_loop_task.done():
+            try:
+                await asyncio.wait_for(self.read_loop_task, timeout)
+            except asyncio.TimeoutError:
+                # At this point, read_loop_task.cancel() was already called by
+                # wait_for.
+                with suppress(asyncio.CancelledError):
+                    await self.read_loop_task
 
         try:
-            # await list(pending_with_timeouts)
-            self.abort(exception=exc.TimeoutError)
-            # wlist = list(self.drain_all_pending())
-            # log.warning('Wait for list: {} {}'.format(wlist, self.pending))
-            # if len(wlist) > 0:
-            #     await asyncio.wait(wlist, timeout=timeout)
+            if self.pending_count() > 0:
+                log.warning('Pendings: {}; specials: {}'.format(
+                    self.pending, self.pending_specials))
+                self.abort(exception=exc.TimeoutError)
         except asyncio.TimeoutError:
             log.warning('ABORT Timeout')
             await self.abort(exception=exc.TimeoutError)
