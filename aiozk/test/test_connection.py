@@ -12,7 +12,7 @@ def connection(event_loop):
         port=2181,
         watch_handler=mock.MagicMock(),
         read_timeout=30,
-        loop=mock.MagicMock(wraps=event_loop))
+        loop=event_loop)
 
     connection.writer = mock.MagicMock()
     return connection
@@ -23,22 +23,24 @@ async def test_close_connection_in_state_closing_do_not_performs_abort(connectio
     connection.abort = mock.AsyncMock()
     connection.closing = True
 
-    await connection.close(mock.ANY)
+    await connection.close(0.1)
 
     connection.abort.assert_not_awaited()
 
 
 @pytest.mark.asyncio
 async def test_close_cancels_read_loop_task(connection):
-    connection.start_read_loop()
-    connection.read_response = mock.AsyncMock(return_value=(0, mock.ANY, mock.ANY))
+    connection.read_loop_task = connection.loop.create_future()
+    connection.read_loop_task.done = mock.MagicMock(return_value=False)
+    connection.read_loop_task.cancel = mock.MagicMock(
+        wraps=connection.read_loop_task.cancel)
+    await connection.close(0.1)
+    connection.read_loop_task.cancel.assert_called_once()
 
-    task_cancelled_future = connection.loop.create_future()
 
-    def set_result(task):
-        task_cancelled_future.set_result(task.cancelled())
-
-    connection.read_loop_task.add_done_callback(set_result)
-
-    await connection.close(mock.ANY)
-    assert await task_cancelled_future
+@pytest.mark.asyncio
+async def test_connection_abort(connection):
+    connection.pending_count = mock.MagicMock(return_value=1)
+    connection.abort = mock.MagicMock()
+    await connection.close(0.1)
+    connection.abort.assert_called_once()
