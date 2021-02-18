@@ -73,16 +73,14 @@ class Connection:
 
     async def connect(self):
         log.debug("Initial connection to server %s:%d", self.host, self.port)
-        self.reader, self.writer = await asyncio.open_connection(self.host, self.port,
-                                                                 loop=self.loop)
+        self.reader, self.writer = await asyncio.open_connection(self.host, self.port)
 
         try:
             await self._make_handshake()
         finally:
             self.writer.close()
 
-        self.reader, self.writer = await asyncio.open_connection(self.host, self.port,
-                                                                 loop=self.loop)
+        self.reader, self.writer = await asyncio.open_connection(self.host, self.port)
 
     async def send_connect(self, request):
         # meant to be used before the read_loop starts
