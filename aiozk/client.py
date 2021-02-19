@@ -25,7 +25,6 @@ class ZKClient:
         retry_policy=None,
         allow_read_only=False,
         read_timeout=None,
-        loop=None,
     ):
         """
         :param str servers: Server list to which ZKClient tries connecting.
@@ -56,19 +55,13 @@ class ZKClient:
 
         :param float read_timeout: Timeout on reading from Zookeeper server in
             seconds.
-
-        :param loop: event loop. If None, asyncio.get_event_loop() is used.
         """
-        self.loop = loop or asyncio.get_event_loop()
         self.chroot = None
         if chroot:
             self.chroot = self.normalize_path(chroot)
             log.info("Using chroot '%s'", self.chroot)
 
-        self.session = Session(
-            servers, session_timeout, retry_policy,
-            allow_read_only, read_timeout, loop=self.loop
-        )
+        self.session = Session(servers, session_timeout, retry_policy, allow_read_only, read_timeout)
 
         self.default_acl = default_acl or [protocol.UNRESTRICTED_ACCESS]
 

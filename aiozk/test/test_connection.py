@@ -6,13 +6,13 @@ import aiozk.connection
 
 
 @pytest.fixture
-def connection(event_loop):
+def connection():
     connection = aiozk.connection.Connection(
         host='zookeeper.test',
         port=2181,
         watch_handler=mock.MagicMock(),
         read_timeout=30,
-        loop=event_loop)
+    )
 
     connection.writer = mock.MagicMock()
     return connection

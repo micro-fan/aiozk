@@ -22,8 +22,7 @@ log = logging.getLogger(__name__)
 
 class Session:
 
-    def __init__(self, servers, timeout, retry_policy, allow_read_only, read_timeout, loop):
-        self.loop = loop
+    def __init__(self, servers, timeout, retry_policy, allow_read_only, read_timeout):
         self.hosts = []
         for server in servers.split(","):
             ipv6_match = re.match(r'\[(.*)\]:(\d+)$', server)
@@ -129,7 +128,7 @@ class Session:
             asyncio.create_task(old_conn.close(self.timeout))
 
     async def make_connection(self, host, port):
-        conn = Connection(host, port, watch_handler=self.event_dispatch, read_timeout=self.read_timeout, loop=self.loop)
+        conn = Connection(host, port, watch_handler=self.event_dispatch, read_timeout=self.read_timeout)
         try:
             await conn.connect()
         except Exception:
