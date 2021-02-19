@@ -18,8 +18,7 @@ class LeaderElection(SequentialRecipe):
 
     async def volunteer(self):
         await self.create_unique_znode(self.LABEL)
-        self.watch_loop_task = asyncio.ensure_future(self.watch_loop(),
-                                                     loop=self.client.loop)
+        self.watch_loop_task = asyncio.create_task(self.watch_loop())
 
     async def watch_loop(self):
         while True:
