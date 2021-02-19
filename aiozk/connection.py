@@ -101,7 +101,7 @@ class Connection:
         return zxid, response
 
     def start_read_loop(self):
-        self.read_loop_task = self.loop.create_task(self.read_loop())
+        self.read_loop_task = asyncio.create_task(self.read_loop())
         # ioloop.IOLoop.current().add_callback(self.read_loop)
 
     def send(self, request, xid=None):

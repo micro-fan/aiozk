@@ -62,7 +62,7 @@ async def test_start_session_twice(session):
     session.ensure_safe_state.assert_called_once_with()
 
     session.loop.call_soon.assert_called_once()
-    session.loop.create_task.assert_called_once()
+    asyncio.create_task.assert_called_once()
     session.repair_loop_task.cancel()
 
 
@@ -284,7 +284,7 @@ async def test_find_server(session, retry_policy):
     conn.start_read_only = True
     session.make_connection.return_value = conn
 
-    task = session.loop.create_task(session.find_server(allow_read_only=False))
+    task = asyncio.create_task(session.find_server(allow_read_only=False))
 
     async def _wait_for():
         while retry_policy.enforce.await_count < 4:
