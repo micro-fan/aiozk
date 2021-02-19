@@ -15,14 +15,8 @@ def servers():
     return HOST
 
 
-@pytest.fixture
-def event_loop(event_loop):
-    event_loop.set_debug(True)
-    yield event_loop
-
-
-def get_client(loop=None):
-    return ZKClient(HOST, chroot='/test_aiozk', loop=loop)
+def get_client():
+    return ZKClient(HOST, chroot='/test_aiozk')
 
 
 async def get_tree(client, curr='/'):
@@ -48,8 +42,8 @@ def path():
 
 
 @pytest.fixture
-async def zk(event_loop):
-    c = get_client(event_loop)
+async def zk():
+    c = get_client()
     await c.start()
     if len(await c.get_children('/')):
         await c.deleteall('')
@@ -65,8 +59,8 @@ async def zk(event_loop):
 
 
 @pytest.fixture
-async def zk2(event_loop):
-    c = get_client(event_loop)
+async def zk2():
+    c = get_client()
     await c.start()
     yield c
     await c.close()

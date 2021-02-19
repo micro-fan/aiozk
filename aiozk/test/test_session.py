@@ -10,7 +10,7 @@ from aiozk import exc, protocol
 
 
 @pytest.fixture
-def session(event_loop):
+def session():
     fake_retry_policy = mock.MagicMock(wraps=aiozk.session.RetryPolicy.forever())
     session = aiozk.session.Session(
         'zookeeper.test',
@@ -18,7 +18,6 @@ def session(event_loop):
         retry_policy=fake_retry_policy,
         allow_read_only=True,
         read_timeout=30,
-        loop=mock.MagicMock(wraps=event_loop),
     )
     session.state.transition_to(aiozk.session.States.CONNECTED)
     session.conn = mock.MagicMock()
@@ -194,8 +193,8 @@ async def test_cxid_rollover(zk, path):
 
 
 @pytest.mark.asyncio
-async def test_duplicated_heartbeat_task(servers, event_loop):
-    session = aiozk.session.Session(servers, 3, None, False, None, event_loop)
+async def test_duplicated_heartbeat_task(servers):
+    session = aiozk.session.Session(servers, 3, None, False, None)
     await session.start()
     session.set_heartbeat()
 
@@ -229,8 +228,8 @@ async def test_duplicated_heartbeat_task(servers, event_loop):
 
 
 @pytest.mark.asyncio
-async def test_session_close_heartbeat_cancellation(servers, event_loop):
-    session = aiozk.session.Session(servers, 3, None, False, None, event_loop)
+async def test_session_close_heartbeat_cancellation(servers):
+    session = aiozk.session.Session(servers, 3, None, False, None)
     await session.start()
     heartbeat_task = mock.AsyncMock()
     done = mock.MagicMock()
@@ -252,8 +251,8 @@ async def test_session_close_heartbeat_cancellation(servers, event_loop):
 
 
 @pytest.mark.asyncio
-async def test_send_timeout(servers, event_loop, path):
-    session = aiozk.session.Session(servers, 3, None, False, None, event_loop)
+async def test_send_timeout(servers, path):
+    session = aiozk.session.Session(servers, 3, None, False, None)
     await session.start()
     await session.state.wait_for(States.CONNECTED)
     # Simulate that response is delayed

@@ -26,8 +26,7 @@ if payload_log.level == logging.NOTSET:
 
 class Connection:
 
-    def __init__(self, host, port, watch_handler, read_timeout, loop):
-        self.loop = loop
+    def __init__(self, host, port, watch_handler, read_timeout):
         self.host = host
         self.port = int(port)
 
