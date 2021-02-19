@@ -102,10 +102,10 @@ class Connection:
 
     def start_read_loop(self):
         self.read_loop_task = asyncio.create_task(self.read_loop())
-        # ioloop.IOLoop.current().add_callback(self.read_loop)
 
     def send(self, request, xid=None):
-        f = self.loop.create_future()
+        loop = asyncio.get_event_loop()
+        f = loop.create_future()
 
         if self.closing:
             f.set_exception(exc.ConnectError(self.host, self.port))

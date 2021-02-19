@@ -10,7 +10,8 @@ log = logging.getLogger(__name__)
 @pytest.mark.asyncio
 async def test_barrier(zk, path):
     is_lifted = False
-    is_worker_started = zk.loop.create_future()
+    loop = asyncio.get_event_loop()
+    is_worker_started = loop.create_future()
 
     async def start_worker():
         barrier = zk.recipes.Barrier(path)
