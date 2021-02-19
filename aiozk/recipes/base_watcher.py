@@ -10,9 +10,9 @@ from .recipe import Recipe
 log = logging.getLogger(__name__)
 
 
-def maybe_future(fut, loop):
+def maybe_future(fut):
     if inspect.isawaitable(fut):
-        asyncio.ensure_future(fut, loop=loop)
+        asyncio.create_task(fut)
 
 
 class BaseWatcher(Recipe):
@@ -28,7 +28,7 @@ class BaseWatcher(Recipe):
         self.callbacks[path].add(callback)
 
         if path not in self.loops:
-            self.loops[path] = asyncio.ensure_future(self.watch_loop(path), loop=self.client.loop)
+            self.loops[path] = asyncio.create_task(self.watch_loop(path))
 
     def remove_callback(self, path, callback):
         self.callbacks[path].discard(callback)
@@ -58,7 +58,7 @@ class BaseWatcher(Recipe):
                 raise
 
             for callback in self.callbacks[path].copy():
-                maybe_future(callback(result), loop=self.client.loop)
+                maybe_future(callback(result))
             if WatchEvent.CREATED not in self.watched_events and result == exc.NoNode:
                 return
             try:

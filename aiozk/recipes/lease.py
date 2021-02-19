@@ -29,7 +29,7 @@ class Lease(SequentialRecipe):
         except exc.NodeExists:
             log.warning("Lease for %s already obtained.", self.base_path)
 
-        callback = partial(asyncio.ensure_future, self.release(), loop=self.client.loop)
+        callback = partial(asyncio.create_task, self.release())
         self.client.loop.call_later(duration.total_seconds(), callback)
         return True
 

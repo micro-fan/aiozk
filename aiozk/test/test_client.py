@@ -35,8 +35,8 @@ async def test_cancel_crash(zk, path):
         while 1:
             await zk.wait_for_events([WatchEvent.DATA_CHANGED], path)
 
-    f = asyncio.ensure_future(wait_loop())
-    f.cancel()
+    task = asyncio.create_task(wait_loop())
+    task.cancel()
 
 
 @pytest.mark.asyncio

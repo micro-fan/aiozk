@@ -21,7 +21,7 @@ async def test_barrier(zk, path):
     barrier = zk.recipes.Barrier(path)
     await barrier.create()
 
-    worker = asyncio.ensure_future(start_worker(), loop=zk.loop)
+    worker = asyncio.create_task(start_worker())
     is_ok = await is_worker_started
     assert is_ok == 'ok'
 
