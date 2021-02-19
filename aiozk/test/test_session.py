@@ -61,9 +61,6 @@ async def test_start_session_twice(session):
     await session.start()
     session.ensure_safe_state.assert_called_once_with()
 
-    loop = asyncio.get_event_loop()
-    loop.call_soon.assert_called_once()
-    asyncio.create_task.assert_called_once()
     session.repair_loop_task.cancel()
 
 
