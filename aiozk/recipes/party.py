@@ -23,7 +23,8 @@ class Party(SequentialRecipe):
 
     async def wait_for_change(self):
         if not self.change_future or self.change_future.done():
-            self.change_future = self.client.loop.create_future()
+            loop = asyncio.get_event_loop()
+            self.change_future = loop.create_future()
 
         await self.change_future
 

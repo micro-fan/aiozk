@@ -119,7 +119,8 @@ class ZKClient:
     def wait_for_events(self, event_types, path):
         path = self.normalize_path(path)
 
-        f = self.loop.create_future()
+        loop = asyncio.get_event_loop()
+        f = loop.create_future()
 
         def set_future(_):
             if not f.done():
