@@ -79,7 +79,7 @@ class Session:
             return
         log.debug('Start session...')
         self.loop.call_soon(self.set_heartbeat)
-        self.repair_loop_task = self.loop.create_task(self.repair_loop())
+        self.repair_loop_task = asyncio.create_task(self.repair_loop())
         self.repair_loop_task.add_done_callback(self._on_repair_loop_done)
         self.started = True
         await self.ensure_safe_state()
@@ -111,7 +111,7 @@ class Session:
                 if not conn:
                     continue
                 elif conn.start_read_only and not allow_read_only:
-                    self.loop.create_task(conn.close(self.timeout))
+                    asyncio.create_task(conn.close(self.timeout))
                     conn = None
                     continue
                 log.info("Connected to %s:%s", host, port)
@@ -125,7 +125,7 @@ class Session:
 
         if old_conn:
             log.debug('Close old connection')
-            self.loop.create_task(old_conn.close(self.timeout))
+            asyncio.create_task(old_conn.close(self.timeout))
 
     async def make_connection(self, host, port):
         conn = Connection(host, port, watch_handler=self.event_dispatch, read_timeout=self.read_timeout, loop=self.loop)
@@ -241,7 +241,7 @@ class Session:
 
     def create_heartbeat(self):
         if not self.heartbeat_task or self.heartbeat_task.done():
-            self.heartbeat_task = self.loop.create_task(self.heartbeat())
+            self.heartbeat_task = asyncio.create_task(self.heartbeat())
 
     async def heartbeat(self):
         if self.closing:
