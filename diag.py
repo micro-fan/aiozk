@@ -48,7 +48,7 @@ def printe(msg):
     sys.stderr.flush()
 
 
-async def run():
+async def main():
     # await asyncio.sleep(10)
     logging.debug('Start')
     zk = ZKClient('zk', session_timeout=3)
@@ -58,16 +58,11 @@ async def run():
             await zk.exists('/zookeeper')
             c = zk.session.conn
             ip = c.host_ip
-            logging.debug('DIAG Curr conn: {}'.format([socket.gethostbyaddr(c.host_ip)[0]]))
+            logging.debug('DIAG Curr conn: {}'.format([socket.gethostbyaddr(ip)[0]]))
         except Exception as e:
             logging.error('DIAG Exc: {}'.format(e))
         await asyncio.sleep(1)
 
 
-def main():
-    loop = asyncio.get_running_loop()
-    loop.run_until_complete(run())
-
-
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())
