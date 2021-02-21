@@ -10,11 +10,6 @@ from .recipe import Recipe
 log = logging.getLogger(__name__)
 
 
-def maybe_future(fut):
-    if inspect.isawaitable(fut):
-        asyncio.create_task(fut)
-
-
 class BaseWatcher(Recipe):
 
     watched_events = []
@@ -58,7 +53,9 @@ class BaseWatcher(Recipe):
                 raise
 
             for callback in self.callbacks[path].copy():
-                maybe_future(callback(result))
+                maybe_coroutine = callback(result)
+                if inspect.iscoroutine(maybe_coroutine):
+                    asyncio.create_task(maybe_coroutine)
             if WatchEvent.CREATED not in self.watched_events and result == exc.NoNode:
                 return
             try:
