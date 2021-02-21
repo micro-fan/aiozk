@@ -42,7 +42,7 @@ def retry_policy():
 
 def prepare_repair_loop_callback_done_future(session):
     """Creates future that Awaits for session.repair_loop_task to be completed and returns value of session.closing"""
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     future = loop.create_future()
     repair_loop_task = session.repair_loop_task
 

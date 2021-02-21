@@ -77,7 +77,7 @@ class Session:
             await self.ensure_safe_state()
             return
         log.debug('Start session...')
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         loop.call_soon(self.set_heartbeat)
         self.repair_loop_task = asyncio.create_task(self.repair_loop())
         self.repair_loop_task.add_done_callback(self._on_repair_loop_done)
@@ -237,7 +237,7 @@ class Session:
         timeout = self.timeout / HEARTBEAT_FREQUENCY
         if self.heartbeat_handle:
             self.heartbeat_handle.cancel()
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         self.heartbeat_handle = loop.call_later(timeout, self.create_heartbeat)
 
     def create_heartbeat(self):
@@ -275,7 +275,7 @@ class Session:
         log.debug("Got watch event: %s", event)
 
         if event.type:
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             key = (event.type, event.path)
             for callback in self.watch_callbacks[key]:
                 loop.call_soon(callback, event.path)

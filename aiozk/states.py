@@ -56,7 +56,7 @@ class SessionStateMachine:
                 future.set_result(None)
 
     def wait_for(self, *states):
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         f = loop.create_future()
 
         if self.current_state in states:
