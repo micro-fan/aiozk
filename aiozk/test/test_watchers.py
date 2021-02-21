@@ -66,7 +66,7 @@ async def test_data_watch_delete(zk, path, data_watcher):
 @pytest.mark.asyncio
 async def test_data_watch_no_node(zk, path, data_watcher):
     random_path = path + uuid.uuid4().hex
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     is_finished = loop.create_future()
 
     async def stub_callback(d):
@@ -128,7 +128,7 @@ async def test_child_watch(child_watcher, path, zk, child1, child2):
 @pytest.mark.asyncio
 async def test_child_watch_no_node(child_watcher, path):
     random_path = path + uuid.uuid4().hex
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     is_finished = loop.create_future()
 
     async def stub_callback(d):
@@ -142,7 +142,7 @@ async def test_child_watch_no_node(child_watcher, path):
 @pytest.mark.asyncio
 async def test_reconnect_watcher(data_watcher, path, zk_disruptor, zk, zk2):
     test_data = uuid.uuid4().hex.encode()
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     ready = loop.create_future()
 
     async def data_callback(d):

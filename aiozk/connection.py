@@ -103,7 +103,7 @@ class Connection:
         self.read_loop_task = asyncio.create_task(self.read_loop())
 
     def send(self, request, xid=None):
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         f = loop.create_future()
 
         if self.closing:

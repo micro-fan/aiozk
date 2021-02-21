@@ -31,7 +31,7 @@ async def test_close_connection_in_state_closing_do_not_performs_abort(connectio
 
 @pytest.mark.asyncio
 async def test_close_cancels_read_loop_task(connection):
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     connection.read_loop_task = loop.create_future()
     connection.read_loop_task.done = mock.MagicMock(return_value=False)
     connection.read_loop_task.cancel = mock.MagicMock(

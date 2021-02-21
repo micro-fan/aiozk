@@ -41,7 +41,7 @@ class LeaderElection(SequentialRecipe):
             return
 
         if self.leadership_future is None:
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             self.leadership_future = loop.create_future()
 
         if timeout is not None:
