@@ -1,7 +1,9 @@
 # Asyncio zookeeper client (aiozk)
 
 [![PyPi version](https://img.shields.io/pypi/v/aiozk.svg)](https://pypi.python.org/pypi/aiozk)
-[![Build Status](https://travis-ci.org/micro-fan/aiozk.svg?branch=master)](https://travis-ci.org/micro-fan/aiozk)
+
+[![Build Status](https://img.shields.io/github/workflow/status/micro-fan/aiozk/master)](https://github.com/micro-fan/aiozk/actions)
+
 
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
 **Table of Contents**
