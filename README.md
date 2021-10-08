@@ -110,6 +110,13 @@ docker-compose build
 ./test-runner.sh
 ```
 
+Or you can run tests with tox
+
+```
+pip install --user tox tox-docker
+tox
+```
+
 ### Testing approach
 
 Most of tests are integration tests and running on real zookeeper instances.
