@@ -124,7 +124,7 @@ class SequentialRecipe(Recipe):
         unblocked = self.client.wait_for_events([WatchEvent.DELETED], path)
 
         exists = await self.client.exists(path=path, watch=True)
-        if not exists:
+        if not exists and not unblocked.done():
             unblocked.set_result(None)
 
         try:
