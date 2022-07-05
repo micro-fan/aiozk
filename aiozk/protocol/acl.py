@@ -1,8 +1,17 @@
+import hashlib
+from base64 import b64encode
 from .request import Request
 from .response import Response
 from .part import Part
 from .stat import Stat
 from .primitives import UString, Int, Vector
+
+
+def make_digest_acl_credential(username, password):
+    """Create a SHA1 digest credential"""
+    credential = username.encode('utf-8') + b":" + password.encode('utf-8')
+    cred_hash = b64encode(hashlib.sha1(credential).digest()).strip()
+    return username + ":" + cred_hash.decode('utf-8')
 
 
 class ID(Part):
@@ -100,6 +109,10 @@ UNRESTRICTED_ACCESS = ACL.make(
     read=True, write=True, create=True, delete=True, admin=True
 )
 
+DIGEST_ACCESS = lambda username, password: ACL.make(
+    scheme="digest", id=make_digest_acl_credential(username, password),
+    read=True, write=True, create=True, delete=True, admin=True
+)
 
 class GetACLRequest(Request):
     """

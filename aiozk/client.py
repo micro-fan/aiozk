@@ -145,6 +145,18 @@ class ZKClient:
             return False
         return True
 
+    async def add_auth(self, scheme, auth):
+        """
+        @scheme: world auth digest ip
+        @auth: according by @scheme
+        @return: True/False
+        """
+        try:
+            await self.send(protocol.AuthRequest(type=0, scheme=scheme, auth=auth))
+        except Exception:
+            return False
+        return True
+
     async def create(
         self,
         path,
