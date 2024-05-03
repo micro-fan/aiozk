@@ -2,6 +2,7 @@ import asyncio
 import uuid
 
 import pytest
+import pytest_asyncio
 
 
 class Tree:
@@ -35,7 +36,7 @@ class Tree:
         await asyncio.sleep(0.1)
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def tree(zk, path):
     out = Tree(zk, path)
     await out.init()
@@ -43,7 +44,7 @@ async def tree(zk, path):
     await zk.deleteall(path)
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def tree_cache(zk, path):
     cache = zk.recipes.TreeCache(path)
     cache.set_client(zk)

@@ -2,6 +2,7 @@ import asyncio
 import logging
 import uuid
 import pytest
+import pytest_asyncio
 
 from aiozk import WatchEvent
 from .conftest import get_client
@@ -10,7 +11,7 @@ from .conftest import get_client
 logging.getLogger('asyncio').setLevel(logging.DEBUG)
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def full_zk(zk, path):
     child_1 = f'{path}/{uuid.uuid4().hex}'
     child_2 = f'{path}/{uuid.uuid4().hex}'

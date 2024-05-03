@@ -5,6 +5,7 @@ import uuid
 from aiozk import ZKClient, exc  # noqa
 from aiozk.states import States
 import pytest
+import pytest_asyncio
 
 
 HOST = os.environ.get('ZK_HOST', 'zk')
@@ -41,7 +42,7 @@ def path():
     yield f'/{uuid.uuid4().hex}'
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def zk():
     c = get_client()
     await c.start()
@@ -58,7 +59,7 @@ async def zk():
     await c.close()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def zk2():
     c = get_client()
     await c.start()

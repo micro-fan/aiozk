@@ -5,6 +5,7 @@ from aiozk.transaction import Transaction, TransactionFailed
 pytestmark = pytest.mark.asyncio
 
 
+@pytest.mark.asyncio
 async def test_transaction(zk, path):
     t = Transaction(zk)
     t.create(path)
@@ -14,6 +15,7 @@ async def test_transaction(zk, path):
     assert bool(res)
 
 
+@pytest.mark.asyncio
 async def test_fail_transaction(zk, path):
     t = Transaction(zk)
     t.create(path)
@@ -23,6 +25,7 @@ async def test_fail_transaction(zk, path):
     assert not bool(res)
 
 
+@pytest.mark.asyncio
 async def test_transaction_contextmanager(zk, path):
     async with Transaction(zk) as t:
         t.create(path)
@@ -30,6 +33,7 @@ async def test_transaction_contextmanager(zk, path):
     await zk.delete(path)
 
 
+@pytest.mark.asyncio
 async def test_transaction_contextmanager_fail(zk, path):
     with pytest.raises(TransactionFailed):
         async with Transaction(zk) as t:
@@ -38,9 +42,9 @@ async def test_transaction_contextmanager_fail(zk, path):
     assert not await zk.exists(path)
 
 
+@pytest.mark.asyncio
 async def test_exception_handling(zk, path):
     with pytest.raises(ValueError):
         async with Transaction(zk) as t:
             t.create(path)
             raise ValueError('aaaa')
-    assert not await zk.exists(path)

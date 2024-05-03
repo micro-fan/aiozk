@@ -1,5 +1,5 @@
-FROM fan0/python:2.1.0
-MAINTAINER cybergrind@gmail.com
+FROM fan0/python:4.0.1
+LABEL org.opencontainers.image.authors="cybergrind@gmail.com"
 
 WORKDIR /
 RUN apt update && apt install -y \
@@ -7,9 +7,9 @@ RUN apt update && apt install -y \
         libyaml-dev \
         default-jdk-headless
 
-ENV ZOOKEEPER_VERSION 3.5.7
+ENV ZOOKEEPER_VERSION 3.9.2
 ENV ZOOKEEPER_PACKAGE apache-zookeeper-${ZOOKEEPER_VERSION}-bin
-RUN curl -sS http://archive.apache.org/dist/zookeeper/zookeeper-${ZOOKEEPER_VERSION}/${ZOOKEEPER_PACKAGE}.tar.gz | tar -xzf - -C /opt \
+RUN curl -sS https://archive.apache.org/dist/zookeeper/zookeeper-${ZOOKEEPER_VERSION}/${ZOOKEEPER_PACKAGE}.tar.gz | tar -xzf - -C /opt \
   && mv /opt/${ZOOKEEPER_PACKAGE} /opt/zookeeper \
   && chown -R root:root /opt/zookeeper
 

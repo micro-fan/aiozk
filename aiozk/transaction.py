@@ -123,6 +123,8 @@ class Transaction:
                 result.checked.add(self.client.denormalize_path(request.path))
             elif isinstance(reply, protocol.CreateResponse):
                 result.created.add(self.client.denormalize_path(request.path))
+            elif isinstance(reply, protocol.Create2Response):
+                result.created.add(self.client.denormalize_path(request.path))
             elif isinstance(reply, protocol.SetDataResponse):
                 result.updated.add(self.client.denormalize_path(request.path))
             elif isinstance(reply, protocol.DeleteResponse):
