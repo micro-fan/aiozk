@@ -3,14 +3,13 @@ import time
 import uuid
 
 import pytest
-import pytest_asyncio
 
 from .. import WatchEvent
 from ..exc import NoNode
 from ..recipes.data_watcher import DataWatcher
 
 
-@pytest_asyncio.fixture
+@pytest.fixture
 async def data_watcher(zk, path):
     await zk.create(path)
     watcher = zk.recipes.DataWatcher()
@@ -88,7 +87,7 @@ def child2(path):
     yield f'{path}/{uuid.uuid4().hex}'
 
 
-@pytest_asyncio.fixture
+@pytest.fixture
 async def child_watcher(zk, path, child1, child2):
     await zk.create(path)
     watcher = zk.recipes.ChildrenWatcher()
