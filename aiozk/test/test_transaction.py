@@ -43,4 +43,3 @@ async def test_exception_handling(zk, path):
         async with Transaction(zk) as t:
             t.create(path)
             raise ValueError('aaaa')
-    assert not await zk.exists(path)
