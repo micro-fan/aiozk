@@ -1,18 +1,108 @@
-[tool.black]
-line-length = 100
-skip-string-normalization = true
-py36 = true
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | _build
-  | buck-out
-  | build
-  | dist
-)/
-'''
+[project]
+name = 'aiozk'
+version = '0.32.0'
+description = 'Asyncio client for Zookeeper.'
+authors = [
+    { name = 'Kirill Pinchuk', email = 'cybergrind@gmail.com' }
+]
+maintainers = [
+    { name = 'Kirill Pinchuk', email = 'cybergrind@gmail.com' }
+]
+license = { text = 'MIT' }
+readme = 'README.md'
+requires-python = '>=3.9'
+keywords = ['zookeeper', 'asyncio', 'async']
+classifiers = [
+    'Development Status :: 3 - Alpha',
+    'Intended Audience :: Developers',
+    'License :: OSI Approved :: MIT License',
+    'Operating System :: MacOS',
+    'Operating System :: MacOS :: MacOS X',
+    'Operating System :: POSIX',
+    'Operating System :: POSIX :: Linux',
+    'Operating System :: Unix',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
+    'Programming Language :: Python :: 3.13',
+    'Programming Language :: Python :: Implementation',
+    'Programming Language :: Python :: Implementation :: CPython',
+    'Topic :: Software Development',
+    'Topic :: Software Development :: Libraries',
+]
+dependencies = []
+
+[build-system]
+requires = ['setuptools', 'wheel', 'hatchling']
+build-backend = 'hatchling.build'
+
+[tool.hatch.build]
+exclude = ['.*']
+
+[tool.hatch.commands]
+prerelease = 'hatch build'
+
+[project.urls]
+Homepage = 'http://github.com/micro-fan/aiozk'
+Repository = 'http://github.com/micro-fan/aiozk'
+
+# installed with: uv sync
+[dependency-groups]
+dev = [
+    'ruff',
+    'pre-commit>=4.1.0',
+    'uv>=0.6.1',
+    'coverage',
+    'flake8',
+    'pytest',
+    'pytest-asyncio',
+    'asynctest',
+    'pytest-cov',
+]
+
+[tool.ruff]
+line-length = 120
+target-version = 'py39'
+indent-width = 4
+exclude = ['.venv', '.git']
+
+[tool.ruff.format]
+quote-style = 'single'
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+known-first-party = ['aiozk']
+lines-after-imports = 2
+
+[tool.ruff.lint]
+ignore = [
+  'T201',  # print
+  'G004',  # logging format
+  'Q000',  # quotes
+  'Q001',  # quotes
+  'Q003',  # quotes
+]
+fixable = ['ALL']
+select = [
+  'E',     # pycodestyle
+  'F',     # pyflakes
+  'I',     # isort
+  'G',     # flake8-logging-format
+  'ASYNC', # flake8-async
+  'PIE',   # flake8-pie
+  'T20',   # flake8-print
+  'PT',    # flake8-pytest-style
+  'Q',     # flake8-quotes
+  'RUF',
+]
+exclude = []
+
+[tool.ruff.lint.flake8-quotes]
+docstring-quotes = 'double'
+inline-quotes = 'single'
+multiline-quotes = 'single'
