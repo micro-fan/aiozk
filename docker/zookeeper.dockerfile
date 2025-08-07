@@ -1,4 +1,4 @@
-FROM fan0/python:4.0.1
+FROM ghcr.io/micro-fan/python:4.7.0-py3.13
 LABEL org.opencontainers.image.authors="cybergrind@gmail.com"
 
 WORKDIR /
