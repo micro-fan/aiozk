@@ -10,7 +10,7 @@ maintainers = [
 ]
 license = { text = 'MIT' }
 readme = 'README.md'
-requires-python = '>=3.9'
+requires-python = '>=3.8'
 keywords = ['zookeeper', 'asyncio', 'async']
 classifiers = [
     'Development Status :: 3 - Alpha',
@@ -23,7 +23,6 @@ classifiers = [
     'Operating System :: Unix',
     'Programming Language :: Python',
     'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.7',
     'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
@@ -55,7 +54,7 @@ Repository = 'http://github.com/micro-fan/aiozk'
 [dependency-groups]
 dev = [
     'ruff',
-    'pre-commit>=4.1.0',
+    "pre-commit",
     'uv>=0.6.1',
     'coverage',
     'flake8',

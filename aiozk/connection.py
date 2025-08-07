@@ -14,18 +14,17 @@ DEFAULT_READ_TIMEOUT = 3
 version_regex = re.compile(rb'Zookeeper version: (\d+)\.(\d+)\.(\d+)-.*')
 
 # all requests and responses are prefixed with a 32-bit int denoting size
-size_struct = struct.Struct("!i")
+size_struct = struct.Struct('!i')
 # replies are prefixed with an xid, zxid and error code
-reply_header_struct = struct.Struct("!iqi")
+reply_header_struct = struct.Struct('!iqi')
 
 log = logging.getLogger(__name__)
-payload_log = logging.getLogger(__name__ + ".payload")
+payload_log = logging.getLogger(__name__ + '.payload')
 if payload_log.level == logging.NOTSET:
     payload_log.setLevel(logging.INFO)
 
 
 class Connection:
-
     def __init__(self, host, port, watch_handler, read_timeout):
         self.host = host
         self.port = int(port)
@@ -54,27 +53,31 @@ class Connection:
         self.host_ip = self.writer.transport.get_extra_info('peername')[0]
 
         log.debug("Sending 'srvr' command to %s:%d", self.host, self.port)
-        self.writer.write(b"srvr")
+        self.writer.write(b'srvr')
 
         answer = await self.reader.read()
 
-        version_line = answer.split(b"\n")[0]
+        version_line = answer.split(b'\n')[0]
         match = version_regex.match(version_line)
         if match is None:
             raise ConnectionError
         self.version_info = tuple(map(int, match.groups()))
-        self.start_read_only = bool(b"READ_ONLY" in answer)
+        self.start_read_only = bool(b'READ_ONLY' in answer)
 
-        log.debug("Version info: %s", self.version_info)
-        log.debug("Read-only mode: %s", self.start_read_only)
+        log.debug('Version info: %s', self.version_info)
+        log.debug('Read-only mode: %s', self.start_read_only)
 
-        log.debug("Actual connection to server %s:%d", self.host, self.port)
+        log.debug('Actual connection to server %s:%d', self.host, self.port)
 
     async def connect(self):
-        log.debug("Initial connection to server %s:%d", self.host, self.port)
+        log.debug('Initial connection to server %s:%d', self.host, self.port)
 
-        async with asyncio.timeout(self.read_timeout):
-            self.reader, self.writer = await asyncio.open_connection(self.host, self.port)
+        try:
+            self.reader, self.writer = await asyncio.wait_for(
+                asyncio.open_connection(self.host, self.port), timeout=self.read_timeout
+            )
+        except asyncio.TimeoutError:
+            raise TimeoutError(f'Connection to {self.host}:{self.port} timed out after {self.read_timeout} seconds')
 
         try:
             await self._make_handshake()
@@ -85,7 +88,7 @@ class Connection:
 
     async def send_connect(self, request):
         # meant to be used before the read_loop starts
-        payload_log.debug("[SEND] (initial) %s", request)
+        payload_log.debug('[SEND] (initial) %s', request)
 
         payload = request.serialize()
         payload = size_struct.pack(len(payload)) + payload
@@ -95,10 +98,10 @@ class Connection:
         try:
             _, zxid, response = await self.read_response(initial_connect=True)
         except Exception:
-            log.exception("Error reading connect response.")
+            log.exception('Error reading connect response.')
             return
 
-        payload_log.debug("[RECV] (initial) %s", response)
+        payload_log.debug('[RECV] (initial) %s', response)
         return zxid, response
 
     def start_read_loop(self):
@@ -115,7 +118,7 @@ class Connection:
         if request.special_xid:
             xid = request.special_xid
 
-        payload_log.debug("[SEND] (xid: %s) %s", xid, request)
+        payload_log.debug('[SEND] (xid: %s) %s', xid, request)
 
         payload = request.serialize(xid)
         payload = size_struct.pack(len(payload)) + payload
@@ -136,8 +139,7 @@ class Connection:
         return f
 
     def pending_count(self):
-        return (sum(len(futs) for futs in self.pending_specials.values()) +
-                len(self.pending))
+        return sum(len(futs) for futs in self.pending_specials.values()) + len(self.pending)
 
     async def read_loop(self):
         """
@@ -155,11 +157,11 @@ class Connection:
             except (ConnectionAbortedError, asyncio.CancelledError):
                 return
             except Exception as e:
-                log.exception("Error reading response.")
+                log.exception('Error reading response.')
                 self.abort()
                 return
 
-            payload_log.debug("[RECV] (xid: %s) %s", xid, response)
+            payload_log.debug('[RECV] (xid: %s) %s', xid, response)
 
             if xid == protocol.WATCH_XID:
                 self.watch_handler(response)
@@ -182,8 +184,7 @@ class Connection:
         while remaining_size and (time() < end_time):
             remaining_time = end_time - time()
             try:
-                chunk = await asyncio.wait_for(self.reader.read(remaining_size),
-                                               timeout=remaining_time)
+                chunk = await asyncio.wait_for(self.reader.read(remaining_size), timeout=remaining_time)
             except asyncio.TimeoutError:
                 continue
             payload.append(chunk)
@@ -233,7 +234,7 @@ class Connection:
         the given ``exception`` parameter is used (defaults to
         ``ConnectError``).
         """
-        log.warning("Aborting connection to %s:%s", self.host, self.port)
+        log.warning('Aborting connection to %s:%s', self.host, self.port)
 
         def abort_pending(f):
             exc_info = sys.exc_info()
@@ -272,8 +273,7 @@ class Connection:
 
         try:
             if self.pending_count() > 0:
-                log.warning('Pendings: {}; specials: {}'.format(
-                    self.pending, self.pending_specials))
+                log.warning('Pendings: {}; specials: {}'.format(self.pending, self.pending_specials))
                 self.abort(exception=exc.TimeoutError)
         except asyncio.TimeoutError:
             log.warning('ABORT Timeout')

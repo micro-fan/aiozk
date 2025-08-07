@@ -9,10 +9,10 @@ on:
 jobs:
   run-tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 14
+    timeout-minutes: 10
     steps:
     - uses: actions/checkout@v4
     - uses: astral-sh/setup-uv@v6
-    - run: uv python install 3.9 3.11 3.13
+    - run: uv python install 3.8 3.9 3.11 3.13
     - run: uv run tox
     - run: uv run codecov
