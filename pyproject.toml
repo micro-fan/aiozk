@@ -65,6 +65,7 @@ dev = [
     'pytest-cov',
     'tox',
     'tox-docker',
+    'codecov',
 ]
 
 [tool.ruff]

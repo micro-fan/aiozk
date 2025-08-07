@@ -11,10 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v2
-      with:
-        python-version: '3.9'
-    - run: pip3 install tox tox-docker codecov
-    - run: tox
-    - run: codecov
+    - uses: actions/checkout@v4
+    - uses: astral-sh/setup-uv@v6
+    - run: uv python install 3.9 3.10 3.11 3.12 3.13
+    - run: uv run tox
+    - run: uv run codecov

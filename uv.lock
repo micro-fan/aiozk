@@ -10,6 +10,7 @@ source = { editable = "." }
 [package.dev-dependencies]
 dev = [
     { name = "asynctest" },
+    { name = "codecov" },
     { name = "coverage" },
     { name = "flake8" },
     { name = "pre-commit" },
@@ -27,6 +28,7 @@ dev = [
 [package.metadata.requires-dev]
 dev = [
     { name = "asynctest" },
+    { name = "codecov" },
     { name = "coverage" },
     { name = "flake8" },
     { name = "pre-commit", specifier = ">=4.1.0" },
@@ -165,6 +167,19 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/2c/9d/9bf2b005138e7e060d7ebdec7503d0ef3240141587651f4b445bdf7286c2/charset_normalizer-3.4.2-cp39-cp39-win32.whl", hash = "sha256:43e0933a0eff183ee85833f341ec567c0980dae57c464d8a508e1b2ceb336471", size = 98436, upload-time = "2025-05-02T08:34:35.907Z" },
     { url = "https://files.pythonhosted.org/packages/6d/24/5849d46cf4311bbf21b424c443b09b459f5b436b1558c04e45dbb7cc478b/charset_normalizer-3.4.2-cp39-cp39-win_amd64.whl", hash = "sha256:d11b54acf878eef558599658b0ffca78138c8c3655cf4f3a4a673c437e67732e", size = 105772, upload-time = "2025-05-02T08:34:37.935Z" },
     { url = "https://files.pythonhosted.org/packages/20/94/c5790835a017658cbfabd07f3bfb549140c3ac458cfc196323996b10095a/charset_normalizer-3.4.2-py3-none-any.whl", hash = "sha256:7f56930ab0abd1c45cd15be65cc741c28b1c9a34876ce8c17a2fa107810c0af0", size = 52626, upload-time = "2025-05-02T08:34:40.053Z" },
+]
+
+[[package]]
+name = "codecov"
+version = "2.1.13"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "coverage" },
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/2c/bb/594b26d2c85616be6195a64289c578662678afa4910cef2d3ce8417cf73e/codecov-2.1.13.tar.gz", hash = "sha256:2362b685633caeaf45b9951a9b76ce359cd3581dd515b430c6c3f5dfb4d92a8c", size = 21416, upload-time = "2023-04-17T23:11:39.779Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/af/02/18785edcdf6266cdd6c6dc7635f1cbeefd9a5b4c3bb8aff8bd681e9dd095/codecov-2.1.13-py2.py3-none-any.whl", hash = "sha256:c2ca5e51bba9ebb43644c43d0690148a55086f7f5e6fd36170858fa4206744d5", size = 16512, upload-time = "2023-04-17T23:11:37.344Z" },
 ]
 
 [[package]]
