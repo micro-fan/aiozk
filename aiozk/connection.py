@@ -72,7 +72,9 @@ class Connection:
 
     async def connect(self):
         log.debug("Initial connection to server %s:%d", self.host, self.port)
-        self.reader, self.writer = await asyncio.open_connection(self.host, self.port)
+
+        async with asyncio.timeout(self.read_timeout):
+            self.reader, self.writer = await asyncio.open_connection(self.host, self.port)
 
         try:
             await self._make_handshake()
