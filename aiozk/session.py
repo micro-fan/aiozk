@@ -85,7 +85,9 @@ class Session:
         await self.ensure_safe_state()
 
     def _on_repair_loop_done(self, repair_loop_task):
-        if self.closing and repair_loop_task.cancelled():
+        # Check if we're in the process of closing or have just closed
+        # (closing might be False by the time this callback runs due to async timing)
+        if (self.closing or not self.started) and repair_loop_task.cancelled():
             return
 
         if repair_loop_task.cancelled():
