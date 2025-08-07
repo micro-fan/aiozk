@@ -40,16 +40,16 @@ async def test_cancel_crash(zk, path):
 
 
 @pytest.mark.asyncio
-async def test_closed_close():
-    zk = get_client()
+async def test_closed_close(servers):
+    zk = get_client(servers)
     await asyncio.wait_for(zk.session.close(), 2)
 
 
 
 @pytest.mark.asyncio
-async def test_inconsistent_zxid():
+async def test_inconsistent_zxid(servers):
     async def coro():
-        zk = get_client()
+        zk = get_client(servers)
         await zk.start()
         # simulate failed connection
         await zk.session.close()
@@ -63,9 +63,9 @@ async def test_inconsistent_zxid():
 
 
 @pytest.mark.asyncio
-async def test_session_reconnect():
+async def test_session_reconnect(servers):
     async def coro():
-        zk = get_client()
+        zk = get_client(servers)
         await zk.start()
         await zk.session.close()
         await zk.session.start()

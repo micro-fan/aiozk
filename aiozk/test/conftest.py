@@ -2,25 +2,29 @@ import asyncio
 import os
 import uuid
 
-from aiozk import ZKClient, exc  # noqa
-from aiozk.states import States
 import pytest
+
+from aiozk import ZKClient, exc
+from aiozk.states import States
 
 
 HOST = os.environ.get('ZK_HOST', 'zk')
+PORT = os.environ.get('ZK_PORT', '2181')
 
 
 @pytest.fixture
 def servers():
-    return HOST
+    return f'{HOST}:{PORT}'
 
 
-def get_client():
-    return ZKClient(HOST, chroot='/test_aiozk')
+def get_client(servers):
+    return ZKClient(servers, chroot='/test_aiozk')
 
 
 async def get_tree(client, curr='/'):
-    out = [curr, ]
+    out = [
+        curr,
+    ]
     children = await client.get_children(curr)
     for c in children:
         # eliminate double slash: //root = '/'.join('/', 'root')
@@ -38,12 +42,12 @@ async def dump_tree(client, base='/'):
 
 @pytest.fixture
 def path():
-    yield f'/{uuid.uuid4().hex}'
+    return f'/{uuid.uuid4().hex}'
 
 
 @pytest.fixture
-async def zk():
-    c = get_client()
+async def zk(servers):
+    c = get_client(servers)
     await c.start()
     if len(await c.get_children('/')):
         await c.deleteall('')
@@ -59,8 +63,8 @@ async def zk():
 
 
 @pytest.fixture
-async def zk2():
-    c = get_client()
+async def zk2(servers):
+    c = get_client(servers)
     await c.start()
     yield c
     await c.close()
@@ -71,6 +75,7 @@ def zk_disruptor(zk):
     """
     Force zk reconnect
     """
+
     async def _force_reconnect():
         conn = zk.session.conn
         await asyncio.sleep(0.2)
@@ -79,4 +84,5 @@ def zk_disruptor(zk):
         lost = [States.SUSPENDED, States.LOST]
         await zk.session.state.wait_for(*lost)
         await zk.session.ensure_safe_state()
-    yield _force_reconnect
+
+    return _force_reconnect
