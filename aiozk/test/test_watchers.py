@@ -24,7 +24,7 @@ async def test_data_watch(zk, path, data_watcher):
     ready = asyncio.Event()
     test_data = b'test' * 1000
 
-    async def data_callback(d):
+    def data_callback(d):
         data.append(d)
         ready.set()
 
@@ -43,7 +43,7 @@ async def test_data_watch_delete(zk, path, data_watcher):
     ready = asyncio.Event()
     test_data = b'test'
 
-    async def data_callback(d):
+    def data_callback(d):
         data.append(d)
         ready.set()
 
@@ -69,7 +69,7 @@ async def test_data_watch_no_node(zk, path, data_watcher):
     loop = asyncio.get_running_loop()
     is_finished = loop.create_future()
 
-    async def stub_callback(d):
+    def stub_callback(d):
         assert d == NoNode
         is_finished.set_result(True)
 
@@ -79,12 +79,12 @@ async def test_data_watch_no_node(zk, path, data_watcher):
 
 @pytest.fixture
 def child1(path):
-    yield f'{path}/{uuid.uuid4().hex}'
+    return f'{path}/{uuid.uuid4().hex}'
 
 
 @pytest.fixture
 def child2(path):
-    yield f'{path}/{uuid.uuid4().hex}'
+    return f'{path}/{uuid.uuid4().hex}'
 
 
 @pytest.fixture
@@ -107,7 +107,7 @@ async def test_child_watch(child_watcher, path, zk, child1, child2):
     children = set()
     ready = asyncio.Event()
 
-    async def children_callback(c):
+    def children_callback(c):
         for child in c:
             children.add(child)
             ready.set()
@@ -131,7 +131,7 @@ async def test_child_watch_no_node(child_watcher, path):
     loop = asyncio.get_running_loop()
     is_finished = loop.create_future()
 
-    async def stub_callback(d):
+    def stub_callback(d):
         assert d == NoNode
         is_finished.set_result(True)
 
@@ -145,7 +145,7 @@ async def test_reconnect_watcher(data_watcher, path, zk_disruptor, zk, zk2):
     loop = asyncio.get_running_loop()
     ready = loop.create_future()
 
-    async def data_callback(d):
+    def data_callback(d):
         print(f'Data callback get: {d}')
         if d == NoNode:
             return
@@ -198,7 +198,7 @@ async def test_watcher_without_parents(zk, path, child1):
     """
     Make sure behavior is sane if ancestor node does not exist
     """
-    final = f"{child1}/{uuid.uuid4().hex}"
+    final = f'{child1}/{uuid.uuid4().hex}'
     watcher = zk.recipes.DataWatcher(wait_for_create=True)
     messages = asyncio.Queue()
 
@@ -215,7 +215,7 @@ async def test_watcher_without_parents(zk, path, child1):
     # create parent, no message should arrive
     await zk.create(path)
     await zk.create(child1)
-    assert messages.empty() == True
+    assert messages.empty() is True
 
     # create final node, should get 'howdy'
     await zk.create(final, b'howdy')
@@ -244,9 +244,10 @@ async def test_multi_watcher(zk, path):
         def cb(resp):
             out.append(1)
             if on_delete:
-                del (cat[name])
-                to_remove = list(dw.callbacks[name])[0]
+                del cat[name]
+                to_remove = next(iter(dw.callbacks[name]))
                 dw.remove_callback(name, to_remove)
+
         return cb
 
     for i in range(num):
@@ -257,10 +258,10 @@ async def test_multi_watcher(zk, path):
     await asyncio.sleep(0.1)
     assert len(out) == num
     # lock python to force zk heartbeats missing
-    time.sleep(13)
+    time.sleep(13)  # noqa: ASYNC251
     on_delete = True
     await zk.session.ensure_safe_state()
-    while num * 2 - len(out) > 10:
+    while num * 2 - len(out) > 10:  # noqa: ASYNC110
         await asyncio.sleep(1)
 
     assert len(out) == num * 2

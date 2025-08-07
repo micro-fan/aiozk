@@ -1,11 +1,13 @@
+import asyncio
+from typing import ClassVar
+
 from .children_watcher import ChildrenWatcher
 from .sequential import SequentialRecipe
 
 
 class Party(SequentialRecipe):
-
-    sub_recipes = {
-        "watcher": ChildrenWatcher,
+    sub_recipes: ClassVar = {
+        'watcher': ChildrenWatcher,
     }
 
     def __init__(self, base_path, name):
@@ -33,10 +35,7 @@ class Party(SequentialRecipe):
         await self.delete_unique_znode(self.name)
 
     def update_members(self, raw_sibling_names):
-        new_members = [
-            self.determine_znode_label(sibling)
-            for sibling in raw_sibling_names
-        ]
+        new_members = [self.determine_znode_label(sibling) for sibling in raw_sibling_names]
 
         self.members = new_members
         if self.change_future and not self.change_future.done():

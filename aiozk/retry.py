@@ -55,7 +55,7 @@ class RetryPolicy:
         elif wait_time < 0:
             raise exc.FailedRetry
 
-        log.debug("Waiting %d seconds until next try.", wait_time)
+        log.debug('Waiting %d seconds until next try.', wait_time)
         await asyncio.sleep(wait_time)
 
     def clear(self, request):
@@ -101,6 +101,7 @@ class RetryPolicy:
         :return: Retry forever policy
         :rtype: aiozk.RetryPolicy
         """
+
         def never_wait(_):
             return None
 
@@ -117,6 +118,7 @@ class RetryPolicy:
         :return: Exponential backoff policy
         :rtype: aiozk.RetryPolicy
         """
+
         def exponential(timings):
             wait_time = base ** len(timings)
             if maximum is not None:
@@ -136,6 +138,7 @@ class RetryPolicy:
         :return: Retry until elapsed policy.
         :rtype: aiozk.RetryPolicy
         """
+
         def elapsed_time(timings):
             if timings:
                 first_timing = timings[0]

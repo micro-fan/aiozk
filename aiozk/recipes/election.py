@@ -4,6 +4,7 @@ import logging
 from .. import exc
 from .sequential import SequentialRecipe
 
+
 log = logging.getLogger(__name__)
 
 
@@ -46,8 +47,7 @@ class LeaderElection(SequentialRecipe):
 
         if timeout is not None:
             try:
-                await asyncio.wait_for(asyncio.shield(self.leadership_future),
-                                       timeout)
+                await asyncio.wait_for(asyncio.shield(self.leadership_future), timeout)
             except asyncio.TimeoutError:
                 raise exc.TimeoutError
         else:

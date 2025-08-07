@@ -1,8 +1,9 @@
 import asyncio
 import logging
 
-from .. import exc, states, Deadline
+from .. import Deadline, exc, states
 from .sequential import SequentialRecipe
+
 
 log = logging.getLogger(__name__)
 
@@ -16,9 +17,7 @@ class BaseLock(SequentialRecipe):
         fut = self.client.session.state.wait_for(states.States.LOST)
         try:
             await fut
-            log.warning(
-                'Session expired at some point, lock %s no longer acquired.',
-                self)
+            log.warning('Session expired at some point, lock %s no longer acquired.', self)
         except asyncio.CancelledError:
             self.client.session.state.remove_waiting(fut, states.States.LOST)
             raise
@@ -38,19 +37,15 @@ class BaseLock(SequentialRecipe):
                 owned_positions, contenders = await self.analyze_siblings()
             except exc.TimeoutError:
                 # state may change to SUSPENDED
-                await self.client.session.state.wait_for(
-                    states.States.CONNECTED)
+                await self.client.session.state.wait_for(states.States.CONNECTED)
                 continue
 
             if znode_label not in owned_positions:
                 raise exc.SessionLost
 
-            blockers = contenders[:owned_positions[znode_label]]
+            blockers = contenders[: owned_positions[znode_label]]
             if blocked_by:
-                blockers = [
-                    contender for contender in blockers
-                    if self.determine_znode_label(contender) in blocked_by
-                ]
+                blockers = [contender for contender in blockers if self.determine_znode_label(contender) in blocked_by]
             if not blockers:
                 break
 
@@ -58,13 +53,11 @@ class BaseLock(SequentialRecipe):
                 await self.wait_on_sibling(blockers[-1], deadline.timeout)
             except exc.TimeoutError:
                 # state may change to SUSPENDED
-                await self.client.session.state.wait_for(
-                    states.States.CONNECTED)
+                await self.client.session.state.wait_for(states.States.CONNECTED)
                 continue
 
         if not self.monitor_session_task or self.monitor_session_task.done():
-            self.monitor_session_task = asyncio.create_task(
-                self.monitor_session())
+            self.monitor_session_task = asyncio.create_task(self.monitor_session())
 
     async def get_out_of_line(self, znode_label):
         await self.delete_unique_znode(znode_label)

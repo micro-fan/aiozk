@@ -79,7 +79,7 @@ from .watches import (  # noqa
     WATCH_XID,
 )
 from .response import (  # noqa
-    response_xref
+    response_xref,
 )
 from .transaction import (  # noqa
     TransactionRequest,

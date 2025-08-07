@@ -1,16 +1,14 @@
+from .part import Part
+from .primitives import Int, UString, Vector
 from .request import Request
 from .response import Response
-from .part import Part
 from .stat import Stat
-from .primitives import UString, Int, Vector
 
 
 class ID(Part):
-    """
-    """
     parts = (
-        ("scheme", UString),
-        ("id", UString),
+        ('scheme', UString),
+        ('id', UString),
     )
 
 
@@ -20,6 +18,7 @@ class ACL(Part):
 
     Do not create this object directly, use ``aiozk,ACL.make()`` instead.
     """
+
     READ_PERM = 1 << 0
     WRITE_PERM = 1 << 1
     CREATE_PERM = 1 << 2
@@ -27,15 +26,12 @@ class ACL(Part):
     ADMIN_PERM = 1 << 4
 
     parts = (
-        ("perms", Int),
-        ("id", ID),
+        ('perms', Int),
+        ('id', ID),
     )
 
     @classmethod
-    def make(
-            cls, scheme, id,
-            read=False, write=False, create=False, delete=False, admin=False
-    ):
+    def make(cls, scheme, id, read=False, write=False, create=False, delete=False, admin=False):
         """
         Create ACL
 
@@ -85,60 +81,35 @@ class ACL(Part):
         self.perms = perms
 
 
-WORLD_READABLE = ACL.make(
-    scheme="world", id="anyone",
-    read=True, write=False, create=False, delete=False, admin=False
-)
+WORLD_READABLE = ACL.make(scheme='world', id='anyone', read=True, write=False, create=False, delete=False, admin=False)
 
-AUTHED_UNRESTRICTED = ACL.make(
-    scheme="auth", id="",
-    read=True, write=True, create=True, delete=True, admin=True
-)
+AUTHED_UNRESTRICTED = ACL.make(scheme='auth', id='', read=True, write=True, create=True, delete=True, admin=True)
 
-UNRESTRICTED_ACCESS = ACL.make(
-    scheme="world", id="anyone",
-    read=True, write=True, create=True, delete=True, admin=True
-)
+UNRESTRICTED_ACCESS = ACL.make(scheme='world', id='anyone', read=True, write=True, create=True, delete=True, admin=True)
 
 
 class GetACLRequest(Request):
-    """
-    """
     opcode = 6
-
-    parts = (
-        ("path", UString),
-    )
+    parts = (('path', UString),)
 
 
 class GetACLResponse(Response):
-    """
-    """
     opcode = 6
-
     parts = (
-        ("acl", Vector.of(ACL)),
-        ("stat", Stat),
+        ('acl', Vector.of(ACL)),
+        ('stat', Stat),
     )
 
 
 class SetACLRequest(Request):
-    """
-    """
     opcode = 7
-
     parts = (
-        ("path", UString),
-        ("acl", Vector.of(ACL)),
-        ("version", Int),
+        ('path', UString),
+        ('acl', Vector.of(ACL)),
+        ('version', Int),
     )
 
 
 class SetACLResponse(Response):
-    """
-    """
     opcode = 7
-
-    parts = (
-        ("stat", Stat),
-    )
+    parts = (('stat', Stat),)

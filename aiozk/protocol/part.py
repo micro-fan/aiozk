@@ -11,6 +11,7 @@ class Part:
     stored in a ``parts`` class attribute, that can hold any `Part` or
     `Primitive` subclass.
     """
+
     parts = ()
 
     def __init__(self, **kwargs):
@@ -53,7 +54,7 @@ class Part:
             fmt.extend(part_format)
             data.extend(part_data)
 
-        return "".join(fmt), data
+        return ''.join(fmt), data
 
     @classmethod
     def parse(cls, buff, offset):
@@ -77,33 +78,21 @@ class Part:
         """
         `Part` instances are equal if all of their sub-parts are also equal.
         """
-        return all([
-            getattr(self, part_name) == getattr(other, part_name)
-            for part_name, part_class in self.parts
-        ])
+        return all([getattr(self, part_name) == getattr(other, part_name) for part_name, part_class in self.parts])
 
     def __ne__(self, other):
         return not self.__eq__(other)
 
     def __str__(self):
-
         def subpart_string(part_info):
             part_name, part_class = part_info
 
-            if not part_class.__name__.startswith("VectorOf"):
-                return "%s=%s" % (part_name, getattr(self, part_name, None))
+            if not part_class.__name__.startswith('VectorOf'):
+                return '%s=%s' % (part_name, getattr(self, part_name, None))
 
-            return "%s=[%s]" % (
-                part_name,
-                ", ".join([
-                    str(item) for item in getattr(self, part_name, [])
-                ])
-            )
+            return '%s=[%s]' % (part_name, ', '.join([str(item) for item in getattr(self, part_name, [])]))
 
-        return "%s(%s)" % (
+        return '%s(%s)' % (
             self.__class__.__name__,
-            ", ".join([
-                subpart_string(part)
-                for part in sorted(self.parts, key=operator.itemgetter(0))
-            ])
+            ', '.join([subpart_string(part) for part in sorted(self.parts, key=operator.itemgetter(0))]),
         )

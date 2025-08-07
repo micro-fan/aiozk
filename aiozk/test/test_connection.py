@@ -34,8 +34,7 @@ async def test_close_cancels_read_loop_task(connection):
     loop = asyncio.get_running_loop()
     connection.read_loop_task = loop.create_future()
     connection.read_loop_task.done = mock.MagicMock(return_value=False)
-    connection.read_loop_task.cancel = mock.MagicMock(
-        wraps=connection.read_loop_task.cancel)
+    connection.read_loop_task.cancel = mock.MagicMock(wraps=connection.read_loop_task.cancel)
     await connection.close(0.1)
     connection.read_loop_task.cancel.assert_called_once()
 

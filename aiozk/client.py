@@ -16,6 +16,7 @@ class ZKClient:
     """
     The class of Zookeeper Client
     """
+
     def __init__(
         self,
         servers,
@@ -71,11 +72,11 @@ class ZKClient:
 
     def normalize_path(self, path):
         if self.chroot:
-            path = "/".join([self.chroot, path])
+            path = '/'.join([self.chroot, path])
 
-        normalized = "/".join([name for name in path.split("/") if name])
+        normalized = '/'.join([name for name in path.split('/') if name])
 
-        return "/" + normalized
+        return '/' + normalized
 
     def denormalize_path(self, path):
         if self.chroot and path.startswith(self.chroot):
@@ -88,7 +89,7 @@ class ZKClient:
         await self.session.start()
 
         if self.chroot:
-            await self.ensure_path("/")
+            await self.ensure_path('/')
 
     @property
     def features(self):
@@ -100,13 +101,13 @@ class ZKClient:
     async def send(self, request):
         response = await self.session.send(request)
 
-        if getattr(request, "path", None) and getattr(response, "stat", None):
+        if getattr(request, 'path', None) and getattr(response, 'stat', None):
             self.stat_cache[self.denormalize_path(request.path)] = response.stat
 
         return response
 
     async def close(self):
-        """ Close Zookeeper session and await for session closed."""
+        """Close Zookeeper session and await for session closed."""
         await self.session.close()
 
     def wait_for_events(self, event_types, path):
@@ -182,7 +183,7 @@ class ZKClient:
             already exists.
         """
         if container and not self.features.containers:
-            raise ValueError("Cannot create container, feature unavailable.")
+            raise ValueError('Cannot create container, feature unavailable.')
 
         path = self.normalize_path(path)
         acl = acl or self.default_acl
@@ -213,12 +214,12 @@ class ZKClient:
         acl = acl or self.default_acl
 
         paths_to_make = []
-        for segment in path[1:].split("/"):
+        for segment in path[1:].split('/'):
             if not paths_to_make:
-                paths_to_make.append("/" + segment)
+                paths_to_make.append('/' + segment)
                 continue
 
-            paths_to_make.append("/".join([paths_to_make[-1], segment]))
+            paths_to_make.append('/'.join([paths_to_make[-1], segment]))
 
         while paths_to_make:
             path = paths_to_make[0]
@@ -227,10 +228,7 @@ class ZKClient:
                 request = protocol.Create2Request(path=path, acl=acl)
             else:
                 request = protocol.CreateRequest(path=path, acl=acl)
-            request.set_flags(
-                ephemeral=False, sequential=False,
-                container=self.features.containers
-            )
+            request.set_flags(ephemeral=False, sequential=False, container=self.features.containers)
 
             try:
                 await self.send(request)
@@ -271,7 +269,7 @@ class ZKClient:
         """
         childs = await self.get_children(path)
         for child in childs:
-            await self.deleteall("/".join([path, child]))
+            await self.deleteall('/'.join([path, child]))
         await self.delete(path, force=True)
 
     async def get(self, path, watch=False):
@@ -290,8 +288,7 @@ class ZKClient:
         """
         # type: (str, bool) -> Tuple[str, protocol.stat.Stat]
         path = self.normalize_path(path)
-        response = await self.send(protocol.GetDataRequest(
-            path=path, watch=watch))
+        response = await self.send(protocol.GetDataRequest(path=path, watch=watch))
 
         return (response.data, response.stat)
 
@@ -334,9 +331,7 @@ class ZKClient:
         """
         # type: (str, str, int) -> protocol.SetDataResponse
         path = self.normalize_path(path)
-        response = await self.send(
-            protocol.SetDataRequest(path=path, data=data, version=version)
-        )
+        response = await self.send(protocol.SetDataRequest(path=path, data=data, version=version))
         return response.stat
 
     async def set_data(self, path, data, force=False):
@@ -364,8 +359,7 @@ class ZKClient:
         else:
             version = -1
 
-        await self.send(protocol.SetDataRequest(
-            path=path, data=data, version=version))
+        await self.send(protocol.SetDataRequest(path=path, data=data, version=version))
 
     async def get_children(self, path, watch=False):
         """
@@ -384,8 +378,7 @@ class ZKClient:
         """
         path = self.normalize_path(path)
 
-        response = await self.send(protocol.GetChildren2Request(
-            path=path, watch=watch))
+        response = await self.send(protocol.GetChildren2Request(path=path, watch=watch))
         return response.children
 
     async def get_acl(self, path):
@@ -428,8 +421,7 @@ class ZKClient:
         else:
             version = -1
 
-        await self.send(protocol.SetACLRequest(
-            path=path, acl=acl, version=version))
+        await self.send(protocol.SetACLRequest(path=path, acl=acl, version=version))
 
     def begin_transaction(self):
         """

@@ -1,13 +1,13 @@
+from .acl import ACL
+from .primitives import Buffer, Int, UString, Vector
 from .request import Request
 from .response import Response
 from .stat import Stat
-from .acl import ACL
-from .primitives import UString, Int, Buffer, Vector
 
 
 class CreateRequest(Request):
-    """
-    """
+    """ """
+
     opcode = 1
 
     writes_data = True
@@ -17,10 +17,10 @@ class CreateRequest(Request):
     CONTAINER_FLAG = 1 << 2
 
     parts = (
-        ("path", UString),
-        ("data", Buffer),
-        ("acl", Vector.of(ACL)),
-        ("flags", Int),
+        ('path', UString),
+        ('data', Buffer),
+        ('acl', Vector.of(ACL)),
+        ('flags', Int),
     )
 
     def set_flags(self, ephemeral=False, sequential=False, container=False):
@@ -36,27 +36,25 @@ class CreateRequest(Request):
 
 
 class CreateResponse(Response):
-    """
-    """
+    """ """
+
     opcode = 1
 
-    parts = (
-        ("path", UString),
-    )
+    parts = (('path', UString),)
 
 
 class Create2Request(CreateRequest):
-    """
-    """
+    """ """
+
     opcode = 15
 
 
 class Create2Response(Response):
-    """
-    """
+    """ """
+
     opcode = 15
 
     parts = (
-        ("path", UString),
-        ("stat", Stat),
+        ('path', UString),
+        ('stat', Stat),
     )

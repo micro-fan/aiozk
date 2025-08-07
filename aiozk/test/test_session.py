@@ -1,12 +1,11 @@
 import asyncio
 from unittest import mock
 
-import aiozk.session
-from aiozk.states import States
-
 import pytest
 
+import aiozk.session
 from aiozk import exc, protocol
+from aiozk.states import States
 
 
 @pytest.fixture
@@ -35,6 +34,7 @@ def retry_policy():
 
         async def sleep_zero():
             await asyncio.sleep(0)
+
         enforce = mock.AsyncMock(side_effect=sleep_zero)
         rp.enforce = enforce
         yield rp
@@ -77,7 +77,6 @@ async def test_close_produces_no_error_log(session):
 
     repair_loop_callback_done = prepare_repair_loop_callback_done_future(session)
     with mock.patch.object(aiozk.session.log, 'error') as err_log_mock:
-
         assert not session.closing
         await session.close()
 
@@ -176,7 +175,7 @@ async def test_send_good_case(session):
 
 @pytest.mark.asyncio
 async def test_cxid_rollover(zk, path):
-    zk.session.xid = 0x7fffffff - 10
+    zk.session.xid = 0x7FFFFFFF - 10
 
     try:
         await zk.create(path)
@@ -185,7 +184,7 @@ async def test_cxid_rollover(zk, path):
     finally:
         await zk.deleteall(path)
 
-    assert zk.session.xid < 0x7fffffff
+    assert zk.session.xid < 0x7FFFFFFF
     assert zk.session.xid > 0
 
 
@@ -199,15 +198,13 @@ async def test_duplicated_heartbeat_task(servers):
     session.conn.read_loop_task.cancel()
     # Ensure that the first heartbeat task is running and waiting for a
     # response of ping request.
-    await asyncio.sleep(session.timeout / aiozk.session.HEARTBEAT_FREQUENCY +
-                        0.1)
+    await asyncio.sleep(session.timeout / aiozk.session.HEARTBEAT_FREQUENCY + 0.1)
     # While the first heartbeat task is waiting for a response,
     # .set_heartbeat() can be called by session.send().
     session.set_heartbeat()
     # Ensure that the second heartbeat task is running and waiting for a
     # response of ping request.
-    await asyncio.sleep(session.timeout / aiozk.session.HEARTBEAT_FREQUENCY +
-                        0.1)
+    await asyncio.sleep(session.timeout / aiozk.session.HEARTBEAT_FREQUENCY + 0.1)
     session.conn.start_read_loop()
     # If the second call of .set_heartbeat() created a duplicated heartbeat
     # task and the state of session turns into SUSPENDED. The right behavior is
@@ -217,8 +214,8 @@ async def test_duplicated_heartbeat_task(servers):
         with pytest.raises(asyncio.TimeoutError):
             await asyncio.wait_for(
                 session.state.wait_for(States.SUSPENDED),
-                timeout=session.timeout -
-                session.timeout / aiozk.session.HEARTBEAT_FREQUENCY * 2)
+                timeout=session.timeout - session.timeout / aiozk.session.HEARTBEAT_FREQUENCY * 2,
+            )
     finally:
         await session.state.wait_for(States.CONNECTED)
         await session.close()
@@ -259,17 +256,15 @@ async def test_send_timeout(servers, path):
 
     nonode_path = path
     with pytest.raises(asyncio.TimeoutError):
-        await asyncio.wait_for(session.send(
-            protocol.ExistsRequest(path=nonode_path, watch=False)),
-                               timeout=0.1)
+        await asyncio.wait_for(session.send(protocol.ExistsRequest(path=nonode_path, watch=False)), timeout=0.1)
 
     await asyncio.sleep(0.1)
     session.conn.start_read_loop()
     try:
         with pytest.raises(exc.NoNode):
-            await asyncio.wait_for(session.send(
-                protocol.ExistsRequest(path=nonode_path, watch=False)),
-                                   timeout=session.timeout + 1)
+            await asyncio.wait_for(
+                session.send(protocol.ExistsRequest(path=nonode_path, watch=False)), timeout=session.timeout + 1
+            )
     finally:
         await session.close()
 
@@ -285,7 +280,7 @@ async def test_find_server(session, retry_policy):
     task = asyncio.create_task(session.find_server(allow_read_only=False))
 
     async def _wait_for():
-        while retry_policy.enforce.await_count < 4:
+        while retry_policy.enforce.await_count < 4:  # noqa: ASYNC110
             await asyncio.sleep(0)
 
     await asyncio.wait_for(_wait_for(), 1)

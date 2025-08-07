@@ -22,8 +22,8 @@ RECIPES = {
     'allocator': 'Allocator',
 }
 
-class RecipeClassProxy:
 
+class RecipeClassProxy:
     def __init__(self, client, recipe_class):
         self.client = client
         self.recipe_class = recipe_class
@@ -35,7 +35,6 @@ class RecipeClassProxy:
 
 
 class RecipeProxy:
-
     def __init__(self, client):
         self.client = client
 
@@ -44,7 +43,7 @@ class RecipeProxy:
 
     def __getattr__(self, name):
         if name not in self.installed_classes:
-            raise AttributeError("No such recipe: %s" % name)
+            raise AttributeError('No such recipe: %s' % name)
 
         return RecipeClassProxy(self.client, self.installed_classes[name])
 
@@ -53,12 +52,12 @@ class RecipeProxy:
             recipe_class = getattr(import_module('aiozk.recipes.{}'.format(module)), name)
 
             if not issubclass(recipe_class, Recipe):
-                log.error("Could not load recipe %s: not a Recipe subclass", recipe_class.__name__)
+                log.error('Could not load recipe %s: not a Recipe subclass', recipe_class.__name__)
                 continue
 
             if not recipe_class.validate_dependencies():
-                log.error("Could not load recipe %s has unmet dependencies", recipe_class.__name__)
+                log.error('Could not load recipe %s has unmet dependencies', recipe_class.__name__)
                 continue
 
-            log.debug("Loaded recipe %s", recipe_class.__name__)
+            log.debug('Loaded recipe %s', recipe_class.__name__)
             self.installed_classes[recipe_class.__name__] = recipe_class

@@ -18,6 +18,7 @@ class Request(Part):
     Since this is a ``Part`` subclass the rest is a matter of
     appending the result of a ``render()`` call.
     """
+
     opcode = None
     special_xid = None
     writes_data = False
@@ -38,6 +39,6 @@ class Request(Part):
         formats.append(payload_format)
         data.extend(payload_data)
 
-        buff.write(struct.pack("!" + "".join(formats), *data))
+        buff.write(struct.pack('!' + ''.join(formats), *data))
 
         return buff.getvalue()

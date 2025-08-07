@@ -1,12 +1,13 @@
 import asyncio
+
 import pytest
+
 from aiozk import states
 from aiozk.exc import TimeoutError
 
 
 @pytest.mark.asyncio
 async def test_shared_lock(zk, path):
-
     shared = zk.recipes.SharedLock(path)
     got_lock = False
     async with shared.writer_lock:
@@ -28,8 +29,8 @@ async def test_shared_lock_timeout(zk, path):
     async with zk.recipes.SharedLock(path).writer_lock:
         got_lock = True
 
+        shrlock2 = zk.recipes.SharedLock(path)
         with pytest.raises(TimeoutError):
-            shrlock2 = zk.recipes.SharedLock(path)
             await shrlock2.writer_lock.acquire(timeout=1)
 
     assert got_lock
@@ -59,10 +60,9 @@ async def test_multiple_reader_allowed(zk, path):
     async with zk.recipes.SharedLock(path).reader_lock:
         try:
             for _ in range(WORKERS):
-                asyncio.create_task(start_worker())
+                _ = asyncio.create_task(start_worker())  # noqa: RUF006
             async with cond:
-                await asyncio.wait_for(
-                    cond.wait_for(lambda: counter == WORKERS), timeout=2)
+                await asyncio.wait_for(cond.wait_for(lambda: counter == WORKERS), timeout=2)
         finally:
             await zk.deleteall(path)
 
@@ -152,7 +152,7 @@ async def test_same_instance_acquire_simultaneously(zk, path):
 
     async with lock.reader_lock:
         for _ in range(WORKERS):
-            asyncio.create_task(start_inadequate_task())
+            _ = asyncio.create_task(start_inadequate_task())  # noqa: RUF006
 
     async with cond:
         await cond.wait_for(lambda: run_counter == WORKERS)
@@ -180,8 +180,7 @@ async def test_delete_unique_znode_on_timeout(zk, path):
 
 
 def inspect_waiting_loss_handlers(zk, tag):
-    waitings = zk.session.state.waitings(
-        states.States.LOST)[states.States.LOST]
+    waitings = zk.session.state.waitings(states.States.LOST)[states.States.LOST]
     tasks = [task for task in asyncio.all_tasks() if not task.done()]
 
     print(f'({tag}) waitings={waitings}, len={len(waitings)}')
@@ -195,12 +194,10 @@ async def test_remove_session_loss_handler_after_lock_released(zk, path):
     waitings_orig, tasks_orig = inspect_waiting_loss_handlers(zk, 'original')
     lock = zk.recipes.SharedLock(path)
     async with lock.writer_lock:
-        waitings_locking, tasks_locking = inspect_waiting_loss_handlers(
-            zk, 'locking')
+        waitings_locking, tasks_locking = inspect_waiting_loss_handlers(zk, 'locking')
     # give a shot for tasks related to lock to be cancelled
     await asyncio.sleep(0)
-    waitings_released, tasks_released = inspect_waiting_loss_handlers(
-        zk, 'released')
+    waitings_released, tasks_released = inspect_waiting_loss_handlers(zk, 'released')
 
     await zk.delete(path)
 

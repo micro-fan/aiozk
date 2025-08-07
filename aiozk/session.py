@@ -4,10 +4,11 @@ import logging
 import random
 import re
 
-from aiozk import protocol, exc
+from aiozk import exc, protocol
+
 from .connection import Connection
 from .retry import RetryPolicy
-from .states import States, SessionStateMachine
+from .states import SessionStateMachine, States
 
 
 DEFAULT_ZOOKEEPER_PORT = 2181
@@ -21,15 +22,14 @@ log = logging.getLogger(__name__)
 
 
 class Session:
-
     def __init__(self, servers, timeout, retry_policy, allow_read_only, read_timeout):
         self.hosts = []
-        for server in servers.split(","):
+        for server in servers.split(','):
             ipv6_match = re.match(r'\[(.*)\]:(\d+)$', server)
             if ipv6_match is not None:
                 host, port = ipv6_match.groups()
-            elif ":" in server:
-                host, port = server.rsplit(":", 1)
+            elif ':' in server:
+                host, port = server.rsplit(':', 1)
             else:
                 host = server
                 port = DEFAULT_ZOOKEEPER_PORT
@@ -94,7 +94,7 @@ class Session:
 
         repair_loop_exception = repair_loop_task.exception()
         if repair_loop_exception:
-            log.error('Repair loop task failed with exception: {error}'.format(error=repair_loop_exception))
+            log.error('Repair loop task failed with exception: %s', repair_loop_exception)
 
     async def find_server(self, allow_read_only):
         conn = None
@@ -106,26 +106,26 @@ class Session:
 
             servers = random.sample(self.hosts, len(self.hosts))
             for host, port in servers:
-                log.info("Connecting to %s:%s", host, port)
+                log.info('Connecting to %s:%s', host, port)
                 conn = await self.make_connection(host, port)
                 if not conn:
                     continue
                 elif conn.start_read_only and not allow_read_only:
-                    asyncio.create_task(conn.close(self.timeout))
+                    _ = asyncio.create_task(conn.close(self.timeout))  # noqa: RUF006
                     conn = None
                     continue
-                log.info("Connected to %s:%s", host, port)
+                log.info('Connected to %s:%s', host, port)
                 break
 
             if not conn:
-                log.warning("No servers available, will keep trying.")
+                log.warning('No servers available, will keep trying.')
 
         old_conn = self.conn
         self.conn = conn
 
         if old_conn:
             log.debug('Close old connection')
-            asyncio.create_task(old_conn.close(self.timeout))
+            _ = asyncio.create_task(old_conn.close(self.timeout))  # noqa: RUF006
 
     async def make_connection(self, host, port):
         conn = Connection(host, port, watch_handler=self.event_dispatch, read_timeout=self.read_timeout)
@@ -137,7 +137,7 @@ class Session:
         return conn
 
     async def establish_session(self):
-        log.info("Establishing session. {!r}".format(self.session_id))
+        log.info('Establishing session. %r', self.session_id)
         connection_response = await self.conn.send_connect(
             protocol.ConnectRequest(
                 protocol_version=0,
@@ -164,8 +164,8 @@ class Session:
                 self.state.transition_to(States.LOST)
             raise exc.SessionLost()
 
-        log.info("Got session id %s", hex(response.session_id))
-        log.info("Negotiated timeout: %s seconds", response.timeout / 1000)
+        log.info('Got session id %s', hex(response.session_id))
+        log.info('Negotiated timeout: %s seconds', response.timeout / 1000)
 
         self.session_id = response.session_id
         self.password = response.password
@@ -186,7 +186,7 @@ class Session:
             try:
                 await asyncio.wait_for(self.establish_session(), self.timeout)
             except (exc.SessionLost, asyncio.TimeoutError) as e:
-                log.info('Session closed: {}'.format(e))
+                log.info('Session closed: %s', e)
                 self.conn.abort(exc.SessionLost)
                 await self.conn.close(self.timeout)  # TODO: make real timeout
                 self.session_id = None
@@ -209,7 +209,7 @@ class Session:
 
             try:
                 self.xid += 1
-                if self.xid > 0x7fffffff:
+                if self.xid > 0x7FFFFFFF:
                     # xid should not exceed the maximum of 32 bit signed integer
                     # and it should be positive value because a few negative
                     # values are special xid.
@@ -228,7 +228,7 @@ class Session:
                 if self.state != States.SUSPENDED:
                     self.state.transition_to(States.SUSPENDED)
             except Exception as e:
-                log.exception('Send exception: {}'.format(e))
+                log.exception('Send exception: %s', e)
                 self.retry_policy.clear(request)
                 raise e
         return response
@@ -251,28 +251,28 @@ class Session:
         await self.ensure_safe_state()
 
         try:
-            timeout = self.timeout - self.timeout/HEARTBEAT_FREQUENCY
+            timeout = self.timeout - self.timeout / HEARTBEAT_FREQUENCY
             zxid, _ = await asyncio.wait_for(self.conn.send(protocol.PingRequest()), timeout)
             self.last_zxid = zxid
         except (exc.ConnectError, asyncio.TimeoutError):
             if self.state != States.SUSPENDED:
                 self.state.transition_to(States.SUSPENDED)
         except Exception as e:
-            log.exception('in heartbeat: {}'.format(e))
+            log.exception('in heartbeat: %s', e)
             raise e
         finally:
             self.set_heartbeat()
 
     def add_watch_callback(self, event_type, path, callback):
-        self.watch_callbacks[(event_type, path)].add(callback)
+        self.watch_callbacks[event_type, path].add(callback)
 
     def remove_watch_callback(self, event_type, path, callback):
-        self.watch_callbacks[(event_type, path)].discard(callback)
-        if not self.watch_callbacks[(event_type, path)]:
+        self.watch_callbacks[event_type, path].discard(callback)
+        if not self.watch_callbacks[event_type, path]:
             self.watch_callbacks.pop((event_type, path))
 
     def event_dispatch(self, event):
-        log.debug("Got watch event: %s", event)
+        log.debug('Got watch event: %s', event)
 
         if event.type:
             loop = asyncio.get_running_loop()
@@ -294,7 +294,7 @@ class Session:
             log.warning("Got 'connected read only' watch event.")
             self.state.transition_to(States.READ_ONLY)
         elif event.state == protocol.WatchEvent.SASL_AUTHENTICATED:
-            log.info("Authentication successful.")
+            log.info('Authentication successful.')
         elif event.state == protocol.WatchEvent.CONNECTED:
             log.info("Got 'connected' watch event.")
             self.state.transition_to(States.CONNECTED)

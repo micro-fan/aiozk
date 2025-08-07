@@ -1,4 +1,5 @@
 import asyncio
+
 import pytest
 
 from .. import exc
@@ -114,7 +115,7 @@ async def test_election_early_wait_for_leadership(zk, path):
         assert elec.has_leadership
         early_wait_success.set()
 
-    asyncio.create_task(wait_early())
+    _ = asyncio.create_task(wait_early())  # noqa: RUF006
     await asyncio.sleep(0.5)
     assert not elec.has_leadership
 

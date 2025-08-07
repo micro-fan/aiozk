@@ -1,4 +1,5 @@
 import pytest
+
 from aiozk.transaction import Transaction, TransactionFailed
 
 
@@ -31,7 +32,7 @@ async def test_transaction_contextmanager(zk, path):
 
 
 async def test_transaction_contextmanager_fail(zk, path):
-    with pytest.raises(TransactionFailed):
+    with pytest.raises(TransactionFailed):  # noqa: PT012
         async with Transaction(zk) as t:
             t.create(path)
             t.check_version(path, 1)
@@ -39,7 +40,7 @@ async def test_transaction_contextmanager_fail(zk, path):
 
 
 async def test_exception_handling(zk, path):
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='aaaa'):  # noqa: PT012
         async with Transaction(zk) as t:
             t.create(path)
             raise ValueError('aaaa')

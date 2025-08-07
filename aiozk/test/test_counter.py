@@ -8,9 +8,9 @@ from ..recipes.counter import Counter  # noqa
 async def _simple_helper(zk, path, val):
     counter = zk.recipes.Counter(path, default=val)
     await counter.start()
-    _type = type(val)
+    val_type = type(val)
     assert counter.value == val
-    assert type(counter.value) == _type
+    assert isinstance(counter.value, val_type)
     for _i in range(4):
         await counter.incr()
     await zk.delete(path)

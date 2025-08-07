@@ -13,6 +13,7 @@
 import os
 import sys
 
+
 sys.path.insert(0, os.path.abspath('..'))
 
 
@@ -27,7 +28,7 @@ try:
     from aiozk import version_info
 
     if len(version_info) == 4:  # concatenate patch and tag
-        version_info = version_info[:2] + [''.join(version_info[2:])]
+        version_info = [*version_info[:2], ''.join(version_info[2:])]
 
     # The full version, in format '{major}.{minor}.{patch}{tag}'
     release = '.'.join(version_info)
@@ -43,10 +44,7 @@ else:
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = [
-    'sphinx.ext.autodoc',
-    'sphinxcontrib.asyncio'
-]
+extensions = ['sphinx.ext.autodoc', 'sphinxcontrib.asyncio']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

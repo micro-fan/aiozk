@@ -1,7 +1,7 @@
 import pytest
 
+from aiozk.exc import NodeExists, TimeoutError
 from aiozk.recipes.sequential import SequentialRecipe
-from aiozk.exc import TimeoutError, NodeExists
 
 
 @pytest.mark.asyncio
@@ -21,7 +21,7 @@ async def test_wait_on_exist_sibling(zk, path):
     await seq_recipe.create_unique_znode(LABEL)
 
     try:
-        owned_positions, siblings = await seq_recipe.analyze_siblings()
+        _, siblings = await seq_recipe.analyze_siblings()
         with pytest.raises(TimeoutError):
             # SHOULD WAIT
             await seq_recipe.wait_on_sibling(siblings[0], timeout=0.5)
@@ -85,5 +85,5 @@ async def test_prohibited_slash_in_label(zk, path):
     seq_recipe = SequentialRecipe(path)
     seq_recipe.set_client(zk)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='slash'):
         await seq_recipe.create_unique_znode('test/test')

@@ -2,8 +2,8 @@
 import asyncio
 import logging.config
 import os
-import sys
 import socket
+import sys
 
 
 LOG_ROOT = '.'
@@ -11,9 +11,7 @@ LOGGING = {
     'version': 1,
     'disable_existing_loggers': True,
     'formatters': {
-        'standard': {
-            'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
-        },
+        'standard': {'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'},
     },
     'handlers': {
         'console': {
@@ -58,9 +56,9 @@ async def main():
             await zk.exists('/zookeeper')
             c = zk.session.conn
             ip = c.host_ip
-            logging.debug('DIAG Curr conn: {}'.format([socket.gethostbyaddr(ip)[0]]))
+            logging.debug('DIAG Curr conn: %s', [socket.gethostbyaddr(ip)[0]])
         except Exception as e:
-            logging.error('DIAG Exc: {}'.format(e))
+            logging.error('DIAG Exc: %s', e)
         await asyncio.sleep(1)
 
 

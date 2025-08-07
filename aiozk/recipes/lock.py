@@ -26,9 +26,7 @@ class Lock(BaseLock):
         deadline = Deadline(timeout)
         while not self.is_locked and not deadline.has_passed:
             try:
-                await self.wait_in_line(self.znode_label,
-                                        deadline.timeout,
-                                        blocked_by=self.blocked_by)
+                await self.wait_in_line(self.znode_label, deadline.timeout, blocked_by=self.blocked_by)
             except exc.SessionLost:
                 continue
             except Exception as e:

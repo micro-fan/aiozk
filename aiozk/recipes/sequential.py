@@ -3,7 +3,7 @@ import logging
 import re
 import uuid
 
-from aiozk import exc, WatchEvent, RetryPolicy, states, Deadline
+from aiozk import Deadline, RetryPolicy, WatchEvent, exc, states
 
 from .recipe import Recipe
 
@@ -26,10 +26,10 @@ class SequentialRecipe(Recipe):
         return int(sibling[-10:])
 
     def determine_znode_label(self, sibling):
-        return sibling.rsplit("-", 2)[0]
+        return sibling.rsplit('-', 2)[0]
 
     def sibling_path(self, path):
-        return "/".join([self.base_path, path])
+        return '/'.join([self.base_path, path])
 
     async def create_unique_znode(self, znode_label, data=None):
         if znode_label in self.owned_paths:
@@ -39,19 +39,15 @@ class SequentialRecipe(Recipe):
         if '/' in znode_label:
             raise ValueError('slash in label')
 
-        path = self.sibling_path(znode_label + "-" + self.guid + "-")
+        path = self.sibling_path(znode_label + '-' + self.guid + '-')
 
         try:
-            created_path = await self.client.create(
-                path, data=data, ephemeral=True, sequential=True
-            )
+            created_path = await self.client.create(path, data=data, ephemeral=True, sequential=True)
         except exc.NoNode:
             await self.ensure_path()
-            created_path = await self.client.create(
-                path, data=data, ephemeral=True, sequential=True
-            )
+            created_path = await self.client.create(path, data=data, ephemeral=True, sequential=True)
         except Exception as e:
-            asyncio.create_task(self.delete_garbage_znodes(znode_label))
+            _ = asyncio.create_task(self.delete_garbage_znodes(znode_label))  # noqa: RUF006
 
             log.exception('Exception in create_unique_znode')
             raise e
@@ -72,8 +68,7 @@ class SequentialRecipe(Recipe):
         while True:
             try:
                 await retry_policy.enforce()
-                await self.client.session.state.wait_for(
-                    states.States.CONNECTED)
+                await self.client.session.state.wait_for(states.States.CONNECTED)
                 await self.delete_unique_znode(znode_label)
                 break
             except Exception:
@@ -105,8 +100,7 @@ class SequentialRecipe(Recipe):
             try:
                 siblings = await self.get_siblings()
                 for sibling in siblings:
-                    if self.guid in sibling and self.determine_znode_label(
-                            sibling) == znode_label:
+                    if self.guid in sibling and self.determine_znode_label(sibling) == znode_label:
                         path = self.sibling_path(sibling)
                         if path != self.owned_paths.get(znode_label, ''):
                             await self.client.delete(path)
@@ -117,7 +111,7 @@ class SequentialRecipe(Recipe):
 
     async def wait_on_sibling(self, sibling, timeout=None):
         deadline = Deadline(timeout)
-        log.debug("Waiting on sibling %s", sibling)
+        log.debug('Waiting on sibling %s', sibling)
 
         path = self.sibling_path(sibling)
 

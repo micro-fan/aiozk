@@ -1,8 +1,10 @@
 import asyncio
 import logging
+
 import pytest
 
 from aiozk import exc
+
 
 log = logging.getLogger(__name__)
 
@@ -79,7 +81,7 @@ async def test_many_waiters(zk, path):
     await barrier.create()
 
     for _ in range(WORKER_NUM):
-        asyncio.create_task(start_worker())
+        _ = asyncio.create_task(start_worker())  # noqa: RUF006
 
     async with cond:
         await cond.wait_for(lambda: worker_cnt == WORKER_NUM)
@@ -129,7 +131,6 @@ async def test_double_barrier_timeout(zk, path):
     barrier = zk.recipes.DoubleBarrier(path, MIN_WORKERS)
     with pytest.raises(exc.TimeoutError):
         await barrier.enter(timeout=0.5)
-        entered = True
 
     assert not entered
 
@@ -153,9 +154,7 @@ async def test_double_barrier_enter_leakage(zk, path):
     assert enter_count == 0
 
     try:
-        results = await asyncio.gather(
-            *[start_worker() for _ in range(MIN_WORKERS - 1)],
-            return_exceptions=True)
+        results = await asyncio.gather(*[start_worker() for _ in range(MIN_WORKERS - 1)], return_exceptions=True)
 
         assert all([isinstance(x, exc.TimeoutError) for x in results])
         assert enter_count == 0

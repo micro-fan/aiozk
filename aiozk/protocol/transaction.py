@@ -4,31 +4,31 @@ from io import BytesIO
 
 from aiozk import exc
 
+from .part import Part
+from .primitives import Bool, Int
 from .request import Request
 from .response import Response, response_xref
-from .part import Part
-from .primitives import Int, Bool
 
 
-error_struct = struct.Struct("!" + Int.fmt)
+error_struct = struct.Struct('!' + Int.fmt)
 
 
 log = logging.getLogger(__name__)
 
 
 class MultiHeader(Part):
-    """
-    """
+    """ """
+
     parts = (
-        ("type", Int),
-        ("done", Bool),
-        ("error", Int),
+        ('type', Int),
+        ('done', Bool),
+        ('error', Int),
     )
 
 
 class TransactionRequest(Request):
-    """
-    """
+    """ """
+
     opcode = 14
 
     def __init__(self, **kwargs):
@@ -65,17 +65,17 @@ class TransactionRequest(Request):
         formats.append(footer_format)
         data.extend(footer_data)
 
-        buff.write(struct.pack("!" + "".join(formats), *data))
+        buff.write(struct.pack('!' + ''.join(formats), *data))
 
         return buff.getvalue()
 
     def __str__(self):
-        return "Txn[%s]" % ", ".join(map(str, self.requests))
+        return 'Txn[%s]' % ', '.join(map(str, self.requests))
 
 
 class TransactionResponse(Response):
-    """
-    """
+    """ """
+
     opcode = 14
 
     def __init__(self, **kwargs):
@@ -105,4 +105,4 @@ class TransactionResponse(Response):
         return instance
 
     def __str__(self):
-        return "Txn[%s]" % ", ".join(map(str, self.responses))
+        return 'Txn[%s]' % ', '.join(map(str, self.responses))

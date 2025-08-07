@@ -9,7 +9,7 @@ class ConnectError(ZKError):
         self.server_id = server_id
 
     def __str__(self):
-        return "Error connecting to %s:%s" % (self.host, self.port)
+        return 'Error connecting to %s:%s' % (self.host, self.port)
 
 
 class NoServersError(ZKError):
@@ -48,11 +48,8 @@ response_error_xref = {}
 
 
 class ResponseErrorMeta(type):
-
     def __new__(cls, name, bases, attrs):
-        new_class = super(ResponseErrorMeta, cls).__new__(
-            cls, name, bases, attrs
-        )
+        new_class = super(ResponseErrorMeta, cls).__new__(cls, name, bases, attrs)
 
         response_error_xref[new_class.error_code] = new_class
 
@@ -67,13 +64,12 @@ class ResponseError(ZKError, metaclass=ResponseErrorMeta):
 
 
 class UnknownError(ResponseError):
-
     def __init__(self, error_code):
         print(repr(error_code))
         self.error_code = error_code
 
     def __str__(self):
-        return "Unknown error code: %s" % self.error_code
+        return 'Unknown error code: %s' % self.error_code
 
 
 def get_response_error(error_code):

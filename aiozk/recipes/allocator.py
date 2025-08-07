@@ -2,20 +2,19 @@ import asyncio
 import collections
 import itertools
 import json
-
+from typing import ClassVar
 
 from .data_watcher import DataWatcher
-from .party import Party
 from .lock import Lock
+from .party import Party
 from .recipe import Recipe
 
 
 class Allocator(Recipe):
-
-    sub_recipes = {
-        "party": (Party, ["member_path", "name"]),
-        "lock": (Lock, ["lock_path"]),
-        "data_watcher": DataWatcher,
+    sub_recipes: ClassVar = {
+        'party': (Party, ['member_path', 'name']),
+        'lock': (Lock, ['lock_path']),
+        'data_watcher': DataWatcher,
     }
 
     def __init__(self, base_path, name, allocator_fn=None):
@@ -35,11 +34,11 @@ class Allocator(Recipe):
 
     @property
     def lock_path(self):
-        return self.base_path + "/lock"
+        return self.base_path + '/lock'
 
     @property
     def member_path(self):
-        return self.base_path + "/members"
+        return self.base_path + '/members'
 
     @property
     def allocation(self):
@@ -51,14 +50,10 @@ class Allocator(Recipe):
             as_list.extend(list(subset))
 
         # make sure there are no duplicates among the subsets
-        assert len(as_list) == len(set(as_list)), (
-            "duplicate items found in allocation: %s" % self.full_allocation
-        )
+        assert len(as_list) == len(set(as_list)), 'duplicate items found in allocation: %s' % self.full_allocation
         # make sure there's no mismatch beween the full set and allocations
         assert len(self.full_set.symmetric_difference(set(as_list))) == 0, (
-            "mismatch between full set and allocation: %s vs %s" % (
-                self.full_set, self.full_allocation
-            )
+            'mismatch between full set and allocation: %s vs %s' % (self.full_set, self.full_allocation)
         )
 
     async def start(self):
@@ -69,7 +64,7 @@ class Allocator(Recipe):
         await self.party.join()
 
         self.data_watcher.add_callback(self.base_path, self.handle_data_change)
-        asyncio.create_task(self.monitor_member_changes())
+        self._monitor_task = asyncio.create_task(self.monitor_member_changes())
 
     async def add(self, new_item):
         new_set = self.full_set.copy().add(new_item)
@@ -83,7 +78,7 @@ class Allocator(Recipe):
         new_items = set(new_items)
         data = json.dumps(list(new_items))
 
-        with (await self.lock.acquire()):
+        with await self.lock.acquire():
             await self.client.set_data(self.base_path, data=data)
 
     def monitor_member_changes(self):
@@ -113,9 +108,7 @@ class Allocator(Recipe):
     async def stop(self):
         await self.party.leave()
 
-        self.data_watcher.remove_callback(
-            self.base_path, self.handle_data_change
-        )
+        self.data_watcher.remove_callback(self.base_path, self.handle_data_change)
 
 
 def round_robin(members, items):

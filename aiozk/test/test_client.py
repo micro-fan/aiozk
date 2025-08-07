@@ -1,9 +1,12 @@
 import asyncio
 import logging
 import uuid
+from contextlib import suppress
+
 import pytest
 
 from aiozk import WatchEvent
+
 from .conftest import get_client
 
 
@@ -37,13 +40,14 @@ async def test_cancel_crash(zk, path):
 
     task = asyncio.create_task(wait_loop())
     task.cancel()
+    with suppress(asyncio.CancelledError):
+        await task
 
 
 @pytest.mark.asyncio
 async def test_closed_close(servers):
     zk = get_client(servers)
     await asyncio.wait_for(zk.session.close(), 2)
-
 
 
 @pytest.mark.asyncio
@@ -56,10 +60,11 @@ async def test_inconsistent_zxid(servers):
         zk.session.last_zxid = 1231231241312312
         await zk.session.start()
         await zk.session.close()
+
     try:
         await asyncio.wait_for(coro(), timeout=10)
-    except asyncio.TimeoutError as exc:
-        pytest.fail("Failed with timeout on session reconnection attemt")
+    except asyncio.TimeoutError:
+        pytest.fail('Failed with timeout on session reconnection attemt')
 
 
 @pytest.mark.asyncio
@@ -70,10 +75,11 @@ async def test_session_reconnect(servers):
         await zk.session.close()
         await zk.session.start()
         await zk.session.close()
+
     try:
         await asyncio.wait_for(coro(), timeout=10)
-    except asyncio.TimeoutError as exc:
-        pytest.fail("Failed with timeout on session reconnection attemt")
+    except asyncio.TimeoutError:
+        pytest.fail('Failed with timeout on session reconnection attemt')
 
 
 @pytest.mark.asyncio
@@ -83,6 +89,7 @@ async def test_raw_get(full_zk, path):
     data, stat = await full_zk.get(path)
     assert data is None
     assert stat.version == 0
+
 
 @pytest.mark.asyncio
 async def test_raw_set(full_zk, path):

@@ -6,8 +6,8 @@ CLOSE_XID = None
 
 
 class CloseRequest(Request):
-    """
-    """
+    """ """
+
     opcode = -11
     special_xid = CLOSE_XID
 
@@ -15,8 +15,8 @@ class CloseRequest(Request):
 
 
 class CloseResponse(Response):
-    """
-    """
+    """ """
+
     opcode = -11
 
     parts = ()

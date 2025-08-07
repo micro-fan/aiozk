@@ -9,7 +9,6 @@ log = logging.getLogger(__name__)
 
 
 class Counter(Recipe):
-
     def __init__(self, base_path, default=0):
         super().__init__(base_path)
 
@@ -25,7 +24,7 @@ class Counter(Recipe):
         return (self.value, stat.version)
 
     async def start(self):
-        base, _leaf = self.base_path.rsplit("/", 1)
+        base, _leaf = self.base_path.rsplit('/', 1)
         if base:
             await self.client.ensure_path(base)
         try:
@@ -60,20 +59,15 @@ class Counter(Recipe):
                 success = True
             except exc.BadVersion:
                 await self._fetch()
-                log.debug(
-                    "Operation '%s': version mismatch, retrying",
-                    operation.__name__
-                )
+                log.debug("Operation '%s': version mismatch, retrying", operation.__name__)
 
     async def incr(self, by=1):
-
         def increment(value):
             return value + self.numeric_type(by)
 
         await self.apply_operation(increment)
 
     async def decr(self, by=1):
-
         def decrement(value):
             return value - self.numeric_type(by)
 
@@ -81,4 +75,3 @@ class Counter(Recipe):
 
     def stop(self):
         """Deprecated. Counter no longer needs to be stopped"""
-        pass

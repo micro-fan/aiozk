@@ -9,13 +9,16 @@ def drain(iterable):
     * ``list``
     * ``set``
     """
-    if getattr(iterable, "popleft", False):
+    if getattr(iterable, 'popleft', False):
+
         def next_item(coll):
             return coll.popleft()
-    elif getattr(iterable, "popitem", False):
+    elif getattr(iterable, 'popitem', False):
+
         def next_item(coll):
             return coll.popitem()
     else:
+
         def next_item(coll):
             return coll.pop()
 

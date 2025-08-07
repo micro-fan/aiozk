@@ -4,10 +4,11 @@ import logging
 import re
 import struct
 import sys
-from time import time
 from contextlib import suppress
+from time import time
 
-from aiozk import protocol, iterables, exc
+from aiozk import exc, iterables, protocol
+
 
 DEFAULT_READ_TIMEOUT = 3
 
@@ -132,7 +133,7 @@ class Connection:
 
         try:
             self.writer.write(payload)
-        except Exception as e:
+        except Exception:
             log.exception('Exception during write')
             self.abort()
 
@@ -156,7 +157,7 @@ class Connection:
                 xid, zxid, response = await self.read_response()
             except (ConnectionAbortedError, asyncio.CancelledError):
                 return
-            except Exception as e:
+            except Exception:
                 log.exception('Error reading response.')
                 self.abort()
                 return
@@ -239,7 +240,7 @@ class Connection:
         def abort_pending(f):
             exc_info = sys.exc_info()
             # TODO
-            log.debug('Abort pending: {}'.format(f))
+            log.debug('Abort pending: %s', f)
             if False and any(exc_info):
                 f.set_exc_info(exc_info)
             else:
@@ -273,13 +274,13 @@ class Connection:
 
         try:
             if self.pending_count() > 0:
-                log.warning('Pendings: {}; specials: {}'.format(self.pending, self.pending_specials))
+                log.warning('Pendings: %s; specials: %s', self.pending, self.pending_specials)
                 self.abort(exception=exc.TimeoutError)
         except asyncio.TimeoutError:
             log.warning('ABORT Timeout')
             await self.abort(exception=exc.TimeoutError)
         except Exception as e:
-            log.exception('in close: {}'.format(e))
+            log.exception('in close: %s', e)
             raise e
         finally:
             log.debug('Closing writer')

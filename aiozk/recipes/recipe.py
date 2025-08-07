@@ -1,16 +1,17 @@
+from typing import ClassVar
+
 from aiozk import exc
 
 
 class Recipe:
+    sub_recipes: ClassVar = {}
 
-    sub_recipes = {}
-
-    def __init__(self, base_path="/"):
+    def __init__(self, base_path='/'):
         self.client = None
         self.base_path = base_path
 
         for attribute_name, recipe_class in self.sub_recipes.items():
-            recipe_args = ["base_path"]
+            recipe_args = ['base_path']
             if isinstance(recipe_class, tuple):
                 recipe_class, recipe_args = recipe_class
 

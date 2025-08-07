@@ -24,14 +24,9 @@ class Transaction:
         """
         path = self.client.normalize_path(path)
 
-        self.request.add(
-            protocol.CheckVersionRequest(path=path, version=version)
-        )
+        self.request.add(protocol.CheckVersionRequest(path=path, version=version))
 
-    def create(
-            self, path, data=None, acl=None,
-            ephemeral=False, sequential=False, container=False
-    ):
+    def create(self, path, data=None, acl=None, ephemeral=False, sequential=False, container=False):
         """
         Create new znode
 
@@ -53,7 +48,7 @@ class Transaction:
             Zookeeper server (< 3.5.1)
         """
         if container and not self.client.features.containers:
-            raise ValueError("Cannot create container, feature unavailable.")
+            raise ValueError('Cannot create container, feature unavailable.')
 
         path = self.client.normalize_path(path)
         acl = acl or self.client.default_acl
@@ -83,9 +78,7 @@ class Transaction:
         """
         path = self.client.normalize_path(path)
 
-        self.request.add(
-            protocol.SetDataRequest(path=path, data=data, version=version)
-        )
+        self.request.add(protocol.SetDataRequest(path=path, data=data, version=version))
 
     def delete(self, path, version=-1):
         """
@@ -98,9 +91,7 @@ class Transaction:
         """
         path = self.client.normalize_path(path)
 
-        self.request.add(
-            protocol.DeleteRequest(path=path, version=version)
-        )
+        self.request.add(protocol.DeleteRequest(path=path, version=version))
 
     async def commit(self):
         """
@@ -112,7 +103,7 @@ class Transaction:
         :raises ValueError: On no operations to commit
         """
         if not self.request.requests:
-            raise ValueError("No operations to commit.")
+            raise ValueError('No operations to commit.')
 
         response = await self.client.send(self.request)
         pairs = zip(self.request.requests, response.responses)
@@ -164,9 +155,14 @@ class Result:
         self.deleted = set()
 
     def __bool__(self):
-        return sum([
-            len(self.checked),
-            len(self.created),
-            len(self.updated),
-            len(self.deleted),
-        ]) > 0
+        return (
+            sum(
+                [
+                    len(self.checked),
+                    len(self.created),
+                    len(self.updated),
+                    len(self.deleted),
+                ]
+            )
+            > 0
+        )

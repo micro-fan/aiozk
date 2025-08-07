@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 from aiozk import WatchEvent
 from aiozk.exc import NoNode
 
@@ -5,8 +7,7 @@ from .base_watcher import BaseWatcher
 
 
 class DataWatcher(BaseWatcher):
-
-    watched_events = [WatchEvent.DATA_CHANGED, WatchEvent.DELETED]
+    watched_events: ClassVar = [WatchEvent.DATA_CHANGED, WatchEvent.DELETED]
 
     def __init__(self, *args, wait_for_create=False, **kwargs):
         super().__init__(*args, **kwargs)

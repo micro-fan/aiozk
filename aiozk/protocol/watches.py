@@ -1,14 +1,13 @@
+from .primitives import Int, Long, UString, Vector
 from .request import Request
 from .response import Response
-from .primitives import Int, Long, Vector, UString
 
 
 WATCH_XID = -1
 
 
 class WatchEvent(Response):
-    """
-    """
+    """ """
 
     CREATED = 1
     DELETED = 2
@@ -23,66 +22,66 @@ class WatchEvent(Response):
     SESSION_EXPIRED = -112
 
     parts = (
-        ("type", Int),
-        ("state", Int),
-        ("path", UString),
+        ('type', Int),
+        ('state', Int),
+        ('path', UString),
     )
 
 
 class SetWatchesRequest(Request):
-    """
-    """
+    """ """
+
     opcode = 101
 
     parts = (
-        ("relative_zxid", Long),
-        ("data_watches", Vector.of(UString)),
-        ("exist_watches", Vector.of(UString)),
-        ("child_watches", Vector.of(UString)),
+        ('relative_zxid', Long),
+        ('data_watches', Vector.of(UString)),
+        ('exist_watches', Vector.of(UString)),
+        ('child_watches', Vector.of(UString)),
     )
 
 
 class SetWatchesResponse(Response):
-    """
-    """
+    """ """
+
     opcode = 101
 
     parts = ()
 
 
 class CheckWatchesRequest(Request):
-    """
-    """
+    """ """
+
     opcode = 17
 
     parts = (
-        ("path", UString),
-        ("type", Int),
+        ('path', UString),
+        ('type', Int),
     )
 
 
 class CheckWatchesResponse(Response):
-    """
-    """
+    """ """
+
     opcode = 17
 
     parts = ()
 
 
 class RemoveWatchesRequest(Request):
-    """
-    """
+    """ """
+
     opcode = 18
 
     parts = (
-        ("path", UString),
-        ("type", Int),
+        ('path', UString),
+        ('type', Int),
     )
 
 
 class RemoveWatchesResponse(Response):
-    """
-    """
+    """ """
+
     opcode = 18
 
     parts = ()

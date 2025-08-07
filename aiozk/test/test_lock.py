@@ -1,12 +1,14 @@
-from unittest import mock
 import asyncio
 import logging
-import pytest
 import time
 import types
+from unittest import mock
+
+import pytest
 
 from aiozk.exc import TimeoutError
 from aiozk.states import States
+
 
 log = logging.getLogger(__name__)
 
@@ -25,16 +27,12 @@ async def test_creation_failure_deadlock(zk, path):
     # wait for that read loop task is cancelled
     await asyncio.sleep(1)
 
-    asyncio.create_task(change_state())
+    _ = asyncio.create_task(change_state())  # noqa: RUF006
     lock_acquired = False
     with pytest.raises(TimeoutError):
         # lock is created at zookeeper but response can not be returned because
         # read loop task was cancelled.
         await lock.acquire(timeout=2)
-        try:
-            lock_acquired = True
-        finally:
-            await lock.release()
 
     assert not lock_acquired
     assert not lock.owned_paths
@@ -67,10 +65,6 @@ async def test_acquisition_failure_deadlock(zk, path):
         lock_acquired = False
         with pytest.raises(TimeoutError):
             await lock2.acquire(timeout=0.5)
-            try:
-                lock_acquired = True
-            finally:
-                await lock2.release()
 
         assert not lock_acquired
 
@@ -106,10 +100,6 @@ async def test_timeout_accuracy(zk, path):
             start = time.perf_counter()
             with pytest.raises(TimeoutError):
                 await lock2.acquire(timeout=0.5)
-                try:
-                    acquired = True
-                finally:
-                    await lock2.release()
 
             elapsed = time.perf_counter() - start
     finally:
@@ -157,10 +147,6 @@ async def test_async_context_manager_deadlock(zk, path):
             lock = zk.recipes.Lock(path)
             with pytest.raises(TimeoutError):
                 await lock.acquire(timeout=1)
-                try:
-                    acquired2 = True
-                finally:
-                    await lock.release()
     finally:
         await zk.deleteall(path)
 
@@ -179,7 +165,6 @@ async def test_async_context_manager_reentrance(zk, path):
             acquired = True
             with pytest.raises(RuntimeError):
                 await lock.acquire()
-                acquired2 = True
 
         assert acquired
         assert not acquired2
@@ -222,12 +207,11 @@ async def test_async_context_manager_contention(zk, path):
                 cond.notify()
 
     for _ in range(CONTENDERS):
-        asyncio.create_task(create_contender())
+        _ = asyncio.create_task(create_contender())  # noqa: RUF006
 
     try:
         async with cond:
-            await asyncio.wait_for(cond.wait_for(lambda: done == CONTENDERS),
-                                   timeout=2)
+            await asyncio.wait_for(cond.wait_for(lambda: done == CONTENDERS), timeout=2)
 
         assert CONTENDERS == done
     finally:

@@ -1,12 +1,11 @@
 import asyncio
 
-from aiozk import exc, WatchEvent, Deadline
+from aiozk import Deadline, WatchEvent, exc
 
 from .recipe import Recipe
 
 
 class Barrier(Recipe):
-
     def __init__(self, path):
         super().__init__()
         self.path = path
@@ -23,9 +22,7 @@ class Barrier(Recipe):
 
     async def wait(self, timeout=None):
         deadline = Deadline(timeout)
-        barrier_lifted = self.client.wait_for_events(
-            [WatchEvent.DELETED], self.path
-        )
+        barrier_lifted = self.client.wait_for_events([WatchEvent.DELETED], self.path)
 
         exists = await self.client.exists(path=self.path, watch=True)
         if not exists:

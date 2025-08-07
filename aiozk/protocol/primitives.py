@@ -10,6 +10,7 @@ class Primitive:
 
     https://github.com/apache/zookeeper/blob/trunk/src/zookeeper.jute
     """
+
     fmt = None
 
     def __init__(self, value):
@@ -32,7 +33,7 @@ class Primitive:
         Uses the ``format`` class attribute to unpack the data from the buffer
         and determine the used up number of bytes.
         """
-        primitive_struct = struct.Struct("!" + cls.fmt)
+        primitive_struct = struct.Struct('!' + cls.fmt)
 
         value = primitive_struct.unpack_from(buff, offset)[0]
         offset += primitive_struct.size
@@ -46,13 +47,14 @@ class Primitive:
         return self.value == other.value
 
     def __str__(self):
-        return "%s(%s)" % (self.__class__.__name__, self.value)
+        return '%s(%s)' % (self.__class__.__name__, self.value)
 
 
 class VariablePrimitive(Primitive):
     """
     Base primitive for variable-length scalar primitives (strings and bytes).
     """
+
     size_primitive = None
 
     def render_value(self, value):
@@ -83,7 +85,7 @@ class VariablePrimitive(Primitive):
 
         size = len(value)
 
-        fmt = "%s%ds" % (size_format, size)
+        fmt = '%s%ds' % (size_format, size)
 
         return fmt, [size, value]
 
@@ -99,7 +101,7 @@ class VariablePrimitive(Primitive):
         if size == -1:
             return None, offset
 
-        var_struct = struct.Struct("!%ds" % size)
+        var_struct = struct.Struct('!%ds' % size)
 
         value = var_struct.unpack_from(buff, offset)[0]
         value = cls.parse_value(value)
@@ -114,56 +116,63 @@ class Bool(Primitive):
 
     Renders as an unsigned char (1 byte).
     """
-    fmt = "?"
+
+    fmt = '?'
 
 
 class Byte(Primitive):
     """
     Represents a single 8-bit byte.
     """
-    fmt = "b"
+
+    fmt = 'b'
 
 
 class Int(Primitive):
     """
     Represents an 32-bit signed integer.
     """
-    fmt = "i"
+
+    fmt = 'i'
 
 
 class Long(Primitive):
     """
     Represents an 64-bit signed integer.
     """
-    fmt = "q"
+
+    fmt = 'q'
 
 
 class Float(Primitive):
     """
     Represents a single-precision floating poing conforming to IEEE 754.
     """
-    fmt = "f"
+
+    fmt = 'f'
 
 
 class Double(Primitive):
     """
     Represents a double-precision floating poing conforming to IEEE 754.
     """
-    fmt = "d"
+
+    fmt = 'd'
 
 
 class UString(VariablePrimitive):
     """
     Represents a unicode string value, length denoted by a 32-bit integer.
     """
+
     size_primitive = Int
 
     def render_value(self, value):
-        return bytes(str(value).encode("utf-8"))
+        return bytes(str(value).encode('utf-8'))
 
     @classmethod
     def parse_value(cls, value):
-        return value.decode("utf-8")
+        return value.decode('utf-8')
 
     def __str__(self):
         return str(self.value)
@@ -173,6 +182,7 @@ class Buffer(VariablePrimitive):
     """
     Represents a bytestring value, length denoted by a 32-bit signed integer.
     """
+
     size_primitive = Int
 
     def render_value(self, value):
@@ -193,6 +203,7 @@ class Vector(Primitive):
     Not used directly but rather by its ``of()`` classmethod to denote an
     ``Vector.of(<something>)``.
     """
+
     item_class = None
 
     @classmethod
@@ -200,10 +211,7 @@ class Vector(Primitive):
         """
         Creates a new class with the ``item_class`` attribute properly set.
         """
-        copy = type(
-            "VectorOf%s" % part_class.__name__,
-            cls.__bases__, dict(cls.__dict__)
-        )
+        copy = type('VectorOf%s' % part_class.__name__, cls.__bases__, dict(cls.__dict__))
         copy.item_class = part_class
 
         return copy
@@ -233,7 +241,7 @@ class Vector(Primitive):
             fmt.extend(item_format)
             data.extend(item_data)
 
-        return "".join(fmt), data
+        return ''.join(fmt), data
 
     @classmethod
     def parse(cls, buff, offset):
@@ -255,6 +263,4 @@ class Vector(Primitive):
         return values, offset
 
     def __str__(self):
-        return "%s[%s]" % (
-            self.item_class.__name__, ", ".join(map(str, self.value))
-        )
+        return '%s[%s]' % (self.item_class.__name__, ', '.join(map(str, self.value)))

@@ -1,10 +1,11 @@
+import asyncio
 import collections
 import copy
 import logging
-
-import asyncio
+from typing import ClassVar
 
 from aiozk import exc
+
 from .iterables import drain
 
 
@@ -12,16 +13,14 @@ log = logging.getLogger(__name__)
 
 
 class States:
-
-    CONNECTED = "connected"
-    SUSPENDED = "suspended"
-    READ_ONLY = "read_only"
-    LOST = "lost"
+    CONNECTED = 'connected'
+    SUSPENDED = 'suspended'
+    READ_ONLY = 'read_only'
+    LOST = 'lost'
 
 
 class SessionStateMachine:
-
-    valid_transitions = {
+    valid_transitions: ClassVar = {
         (States.LOST, States.CONNECTED),
         (States.LOST, States.READ_ONLY),
         (States.CONNECTED, States.SUSPENDED),
@@ -41,13 +40,9 @@ class SessionStateMachine:
 
     def transition_to(self, state):
         if (self.current_state, state) not in self.valid_transitions:
-            raise exc.InvalidStateTransition(
-                "Invalid session state transition: %s -> %s" % (
-                    self.current_state, state
-                )
-            )
+            raise exc.InvalidStateTransition('Invalid session state transition: %s -> %s' % (self.current_state, state))
 
-        log.debug("Session transition: %s -> %s", self.current_state, state)
+        log.debug('Session transition: %s -> %s', self.current_state, state)
 
         self.current_state = state
 

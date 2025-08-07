@@ -1,9 +1,10 @@
 import asyncio
 import logging
 
-from aiozk import exc, WatchEvent, Deadline
+from aiozk import Deadline, WatchEvent, exc
 
 from .sequential import SequentialRecipe
+
 
 log = logging.getLogger(__name__)
 
@@ -17,13 +18,12 @@ class DoubleBarrier(SequentialRecipe):
 
     @property
     def sentinel_path(self):
-        return self.sibling_path("sentinel")
+        return self.sibling_path('sentinel')
 
     async def enter(self, timeout=None):
         deadline = Deadline(timeout)
-        log.debug("Entering double barrier %s", self.base_path)
-        barrier_lifted = self.client.wait_for_events([WatchEvent.CREATED],
-                                                     self.sentinel_path)
+        log.debug('Entering double barrier %s', self.base_path)
+        barrier_lifted = self.client.wait_for_events([WatchEvent.CREATED], self.sentinel_path)
 
         exists = await self.client.exists(path=self.sentinel_path, watch=True)
 
@@ -50,7 +50,7 @@ class DoubleBarrier(SequentialRecipe):
             raise
 
     async def leave(self, timeout=None):
-        log.debug("Leaving double barrier %s", self.base_path)
+        log.debug('Leaving double barrier %s', self.base_path)
         deadline = Deadline(timeout)
         while True:
             owned_positions, participants = await self.analyze_siblings()

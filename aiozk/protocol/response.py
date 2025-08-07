@@ -5,7 +5,6 @@ response_xref = {}
 
 
 class ResponseMeta(type):
-
     def __new__(cls, name, bases, attrs):
         new_class = super(ResponseMeta, cls).__new__(cls, name, bases, attrs)
 
@@ -21,6 +20,7 @@ class Response(Part, metaclass=ResponseMeta):
     A simple class, has only an ``opcode`` attribute expected to be defined by
     subclasses, and a `deserialize()` classmethod.
     """
+
     opcode = None
 
     @classmethod
